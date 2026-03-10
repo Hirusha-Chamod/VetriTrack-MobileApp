@@ -2,6 +2,7 @@ import { Toast } from '@/components/ui/Toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function RootLayout() {
   const user = useAuthStore((state) => state.user);
@@ -9,20 +10,16 @@ export default function RootLayout() {
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
 
-  // 1. First, tell the app we are mounted and ready
   useEffect(() => {
     setIsReady(true);
   }, []);
 
-  // 2. Handle the Auth Redirection
   useEffect(() => {
-    if (!isReady) return; // Don't redirect if navigation isn't ready
+    if (!isReady) return;
 
     const inAuthGroup = (segments[0] as string) === '(auth)';
 
     if (!user && !inAuthGroup) {
-      // Use setTimeout to push the redirect to the next tick
-      // This solves the "navigating before mounting" error
       setTimeout(() => {
         router.replace('/(auth)/login' as any);
       }, 1);
@@ -34,12 +31,12 @@ export default function RootLayout() {
   }, [user, segments, isReady]);
 
   return (
-    <>
+    <SafeAreaView style={{ flex: 1 }}>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
       <Toast />
-    </>
+    </SafeAreaView>
   );
 }

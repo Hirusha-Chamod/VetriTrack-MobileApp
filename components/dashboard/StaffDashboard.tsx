@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   roleText: { color: 'white', fontSize: 12, fontWeight: 'bold' },
-  sidebarActions: { flex: 1, justifyContent: 'flex-end', padding: 20, paddingBottom: 32 },
+  sidebarActions: { padding: 20, paddingBottom: 32 },
   sidebarLogoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',

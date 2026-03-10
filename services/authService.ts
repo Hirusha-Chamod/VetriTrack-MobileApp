@@ -12,12 +12,12 @@ export interface LoginResponse {
 export const authApi = {
   login: async (username: string, password: string): Promise<LoginResponse> => {
     try {
-      console.log("Attempting login with:", { username, password: '********' });
+
       const response = await api.post<LoginResponse>('/auth/login', {
         username,
         password,
       });
-       console.log("Login successful:", response.data);
+
       return response.data;
      
     } catch (error: any) {
