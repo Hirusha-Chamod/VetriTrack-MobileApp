@@ -1,22 +1,15 @@
+import OwnerDashboard from '@/components/dashboard/OwnerDashboard';
+import StaffDashboard from '@/components/dashboard/StaffDashboard';
+import { useAuthStore } from '@/store/useAuthStore';
+import React from 'react';
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { StyleSheet } from 'react-native';
 
-export default function DashboardScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <ThemedText type="title">VetriTrack Dashboard</ThemedText>
-      {/* This is where your Figma button grid will go */}
-    </ThemedView>
-  );
+export default function TabIndex() {
+  const user = useAuthStore((state) => state.user);
+
+  if (user?.role === 'owner') {
+    return <OwnerDashboard username={user.username} />;
+  }
+
+  return <StaffDashboard username={user?.username || 'Staff'} />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
