@@ -1,3 +1,4 @@
+import SplashScreen from '@/components/SplashScreen';
 import { Toast } from '@/components/ui/Toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Stack, useRouter, useSegments } from 'expo-router';
@@ -8,14 +9,12 @@ export default function RootLayout() {
   const user = useAuthStore((state) => state.user);
   const segments = useSegments();
   const router = useRouter();
-  const [isReady, setIsReady] = useState(false);
+  
+  // Controls when to hide our custom Splash Screen
+  const [isAppReady, setIsAppReady] = useState(false);
 
   useEffect(() => {
-    setIsReady(true);
-  }, []);
-
-  useEffect(() => {
-    if (!isReady) return;
+    if (!isAppReady) return;
 
     const inAuthGroup = (segments[0] as string) === '(auth)';
 
@@ -28,7 +27,14 @@ export default function RootLayout() {
         router.replace('/(tabs)' as any);
       }, 1);
     }
-  }, [user, segments, isReady]);
+  }, [user, segments, isAppReady]);
+  if (!isAppReady) {
+    return (
+      <SplashScreen 
+        onAnimationComplete={() => setIsAppReady(true)} 
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1 }}>

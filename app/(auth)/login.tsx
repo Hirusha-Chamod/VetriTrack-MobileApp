@@ -1,10 +1,13 @@
+import { Colors, Fonts } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { authApi } from '@/services/authService';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useToastStore } from '@/store/useToastStore';
-import { Activity } from 'lucide-react-native';
+import { AlertCircle, Eye, EyeOff } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -20,47 +23,47 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'staff' | 'owner'>('owner');
   const [loading, setLoading] = useState(false);
-  
-  // New state for inline validation
-  const [errors, setErrors] = useState<{ username?: string; password?: string }>({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+
+  const colorScheme = useColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
 
   const login = useAuthStore((state) => state.login);
   const showToast = useToastStore((state) => state.showToast);
 
-  const validate = () => {
-    let valid = true;
-    let newErrors: { username?: string; password?: string } = {};
-
-    if (!username.trim()) {
-      newErrors.username = 'Username is required';
-      valid = false;
+  const handleRoleChange = (selectedRole: 'staff' | 'owner') => {
+    setRole(selectedRole);
+    if (selectedRole === 'owner') {
+      setUsername('');
+      setPassword('');
+    } else {
+      setUsername('');
+      setPassword('');
     }
-    if (!password.trim()) {
-      newErrors.password = 'Password is required';
-      valid = false;
-    }
-
-    setErrors(newErrors);
-    return valid;
+    setError('');
   };
 
   const handleLogin = async () => {
-    // Clear previous errors
-    setErrors({});
+    setError('');
 
-    if (!validate()) return;
+    if (!username.trim() || !password.trim()) {
+      setError('Invalid credentials. Please try again.');
+      return;
+    }
 
     setLoading(true);
     try {
-    const data = await authApi.login(username, password);
-    login({
-      username: data.user.username,
-      role: data.user.role,
-      token: data.accessToken,
-    });
-    showToast(`Welcome back, ${data.user.username}!`, 'success');
-  } catch (error: any) {
-      showToast(error.message || 'Invalid credentials', 'error');
+      const data = await authApi.login(username, password);
+      login({
+        username: data.user.username,
+        role: data.user.role,
+        token: data.accessToken,
+        id: data.user.id, 
+      });
+      showToast(`Welcome back, ${data.user.username}!`, 'success');
+    } catch (err: any) {
+      setError('Invalid credentials. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -69,94 +72,155 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.backgroundLightBlue }]}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.card}>
-          {/* Card Header */}
-          <View style={styles.cardHeader}>
-            <View style={styles.iconBox}>
-              <Activity size={40} color="white" />
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.headerContainer}>
+          <Image
+            source={require('@/assets/images/logo.png')}
+            style={[styles.logo, { tintColor: theme.primary }]}
+            resizeMode="contain"
+          />
+          <Text style={[styles.mainTitle, { color: theme.primaryDark, fontFamily: Fonts?.bold }]}>
+            VetriTrack
+          </Text>
+          <Text style={[styles.mainSubtitle, { color: theme.primary, fontFamily: Fonts?.sans }]}>
+            Veterinary Inventory System
+          </Text>
+        </View>
+
+        <View style={[styles.card, { backgroundColor: theme.card }]}>
+          <Text style={[styles.cardTitle, { color: theme.textPrimary, fontFamily: Fonts?.bold }]}>
+            Welcome Back
+          </Text>
+          <Text style={[styles.cardSubtitle, { color: theme.textSecondary, fontFamily: Fonts?.sans }]}>
+            Sign in to manage your inventory
+          </Text>
+
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: theme.textPrimary, fontFamily: Fonts?.sans }]}>Login As</Text>
+            <View style={[styles.toggleContainer, { backgroundColor: theme.backgroundLightBlue }]}>
+              <TouchableOpacity
+                style={[
+                  styles.toggleTab,
+                  role === 'staff' && [styles.activeTab, { backgroundColor: theme.white }],
+                ]}
+                onPress={() => handleRoleChange('staff')}
+              >
+                <Text
+                  style={[
+                    styles.toggleText,
+                    { 
+                      color: role === 'staff' ? theme.primary : 'rgba(37, 99, 235, 0.7)', 
+                      fontFamily: Fonts?.sans,
+                      fontWeight: role === 'staff' ? '600' : '400'
+                    },
+                  ]}
+                >
+                  Staff
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.toggleTab,
+                  role === 'owner' && [styles.activeTab, { backgroundColor: theme.white }],
+                ]}
+                onPress={() => handleRoleChange('owner')}
+              >
+                <Text
+                  style={[
+                    styles.toggleText,
+                    { 
+                      color: role === 'owner' ? theme.primary : 'rgba(37, 99, 235, 0.7)', 
+                      fontFamily: Fonts?.sans,
+                      fontWeight: role === 'owner' ? '600' : '400'
+                    },
+                  ]}
+                >
+                  Owner
+                </Text>
+              </TouchableOpacity>
             </View>
-            <Text style={styles.title}>VetriTrack</Text>
-            <Text style={styles.subtitle}>Smart Inventory Management</Text>
           </View>
 
-          <View style={styles.cardContent}>
-            {/* Role Toggle Switch */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Select Role</Text>
-              <View style={styles.toggleContainer}>
-                <TouchableOpacity
-                  style={[styles.toggleTab, role === 'staff' && styles.activeTab]}
-                  onPress={() => setRole('staff')}
-                >
-                  <Text style={[styles.toggleText, role === 'staff' && styles.activeToggleText]}>
-                    Staff
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.toggleTab, role === 'owner' && styles.activeTab]}
-                  onPress={() => setRole('owner')}
-                >
-                  <Text style={[styles.toggleText, role === 'owner' && styles.activeToggleText]}>
-                    Owner
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: theme.textPrimary, fontFamily: Fonts?.sans }]}>Username</Text>
+            <TextInput
+              style={[
+                styles.input,
+                { backgroundColor: theme.white, borderColor: theme.inputBorder, color: theme.textPrimary, fontFamily: Fonts?.sans },
+              ]}
+              placeholder="Enter your username"
+              placeholderTextColor={theme.inputPlaceholder}
+              value={username}
+              onChangeText={(text) => {
+                setUsername(text);
+                if (error) setError('');
+              }}
+              autoCapitalize="none"
+            />
+          </View>
 
-            {/* Username */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Username</Text>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: theme.textPrimary, fontFamily: Fonts?.sans }]}>Password</Text>
+            <View style={styles.passwordContainer}>
               <TextInput
-                style={[styles.input, errors.username && styles.inputError]}
-                placeholder="Enter username"
-                placeholderTextColor="#94A3B8"
-                value={username}
-                onChangeText={(text) => {
-                  setUsername(text);
-                  if (errors.username) setErrors({ ...errors, username: undefined });
-                }}
-                autoCapitalize="none"
-              />
-              {errors.username && <Text style={styles.errorText}>{errors.username}</Text>}
-            </View>
-
-            {/* Password */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Password</Text>
-              <TextInput
-                style={[styles.input, errors.password && styles.inputError]}
-                placeholder="Enter password"
-                placeholderTextColor="#94A3B8"
+                style={[
+                  styles.input,
+                  styles.passwordInput,
+                  { backgroundColor: theme.white, borderColor: theme.inputBorder, color: theme.textPrimary, fontFamily: Fonts?.sans },
+                ]}
+                placeholder="Enter your password"
+                placeholderTextColor={theme.inputPlaceholder}
                 value={password}
                 onChangeText={(text) => {
                   setPassword(text);
-                  if (errors.password) setErrors({ ...errors, password: undefined });
+                  if (error) setError('');
                 }}
-                secureTextEntry
+                secureTextEntry={!showPassword}
               />
-              {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+              <TouchableOpacity 
+                style={styles.eyeIcon} 
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff size={20} color={theme.textMuted} />
+                ) : (
+                  <Eye size={20} color={theme.textMuted} />
+                )}
+              </TouchableOpacity>
             </View>
-
-            <TouchableOpacity
-              style={styles.loginButton}
-              onPress={handleLogin}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text style={styles.buttonText}>Sign In</Text>
-              )}
-            </TouchableOpacity>
           </View>
-        </View>
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>VetriTrack v1.0</Text>
-          <Text style={styles.footerSubText}>Veterinary Inventory Management</Text>
+          {error ? (
+            <View style={[styles.errorAlert, { backgroundColor: theme.dangerLight, borderColor: '#FECACA' }]}>
+              <AlertCircle size={16} color={theme.danger} />
+              <Text style={[styles.errorAlertText, { color: '#991B1B', fontFamily: Fonts?.sans }]}>
+                {error}
+              </Text>
+            </View>
+          ) : null}
+
+          <TouchableOpacity
+            style={[styles.loginButton, { backgroundColor: theme.primary }]}
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={[styles.buttonText, { fontFamily: Fonts?.sans }]}>Sign In</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.forgotPasswordButton}>
+            <Text style={[styles.forgotPasswordText, { color: theme.primary, fontFamily: Fonts?.sans }]}>
+              Forgot Password?
+            </Text>
+          </TouchableOpacity>
+
+          <View style={[styles.divider, { borderBottomColor: theme.border }]} />
+
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -166,146 +230,142 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#2563EB',
   },
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: 20,
+    padding: 24,
   },
-  card: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 15,
-    elevation: 10,
-  },
-  cardHeader: {
-    backgroundColor: '#F0F7FF',
-    paddingVertical: 30,
+  headerContainer: {
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    marginBottom: 32,
   },
-  iconBox: {
-    backgroundColor: '#2563EB',
-    padding: 12,
-    borderRadius: 16,
+  logo: {
+    width: 64,
+    height: 64,
     marginBottom: 12,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1E3A8A',
+  mainTitle: {
+    fontSize: 36,
   },
-  subtitle: {
+  mainSubtitle: {
     fontSize: 14,
-    color: '#1D4ED8',
     marginTop: 4,
   },
-  cardContent: {
+  card: {
+    borderRadius: 8,
     padding: 24,
-    gap: 16, // Slightly reduced gap to accommodate error messages
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 15,
+    elevation: 5,
+  },
+  cardTitle: {
+    fontSize: 24,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  cardSubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 20,
   },
   inputGroup: {
-    gap: 6,
+    marginBottom: 16,
   },
   label: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#64748B',
+    marginBottom: 8,
   },
   toggleContainer: {
     flexDirection: 'row',
-    backgroundColor: '#DBEAFE',
-    padding: 4,
     borderRadius: 8,
-    height: 48,
+    padding: 4,
   },
   toggleTab: {
     flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 6,
   },
   activeTab: {
-    backgroundColor: '#2563EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   toggleText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1E40AF',
-  },
-  activeToggleText: {
-    color: 'white',
+    fontSize: 14,
   },
   input: {
-    height: 48,
+    height: 44,
     borderWidth: 1,
-    borderColor: '#DBEAFE',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    color: '#0F172A',
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    fontSize: 14,
   },
-  inputError: {
-    borderColor: '#EF4444', // Red border for error
-    backgroundColor: '#FEF2F2', // Light red tint
+  passwordContainer: {
+    position: 'relative',
+    justifyContent: 'center',
   },
-  errorText: {
-    fontSize: 12,
-    color: '#EF4444',
-    fontWeight: '500',
-    marginTop: 2,
-    marginLeft: 4,
+  passwordInput: {
+    paddingRight: 40,
   },
-  demoBox: {
-    backgroundColor: '#EFF6FF',
+  eyeIcon: {
+    position: 'absolute',
+    right: 12,
+  },
+  errorAlert: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 6,
     borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: '#BFDBFE',
-    marginTop: 8,
+    marginBottom: 16,
   },
-  demoTitle: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#1E40AF',
-    marginBottom: 2,
-  },
-  demoText: {
-    fontSize: 12,
-    color: '#1E40AF',
+  errorAlertText: {
+    fontSize: 14,
+    marginLeft: 8,
   },
   loginButton: {
-    backgroundColor: '#2563EB',
-    height: 52,
-    borderRadius: 8,
+    height: 44,
+    borderRadius: 6,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 8,
+    marginBottom: 16,
   },
   buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  footer: {
-    marginTop: 24,
-    alignItems: 'center',
-  },
-  footerText: {
     color: 'white',
     fontSize: 14,
     fontWeight: '500',
   },
-  footerSubText: {
-    color: '#BFDBFE',
+  forgotPasswordButton: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+  },
+  divider: {
+    borderBottomWidth: 1,
+    marginBottom: 16,
+  },
+  footer: {
+    alignItems: 'center',
+  },
+  demoText: {
     fontSize: 12,
-    marginTop: 4,
+    marginBottom: 8,
+  },
+  demoCredentialsContainer: {
+    alignItems: 'center',
+  },
+  demoCredentials: {
+    fontSize: 12,
+    marginBottom: 4,
   },
 });

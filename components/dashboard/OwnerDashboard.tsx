@@ -1,153 +1,392 @@
-import { useAuthStore } from '@/store/useAuthStore';
+import { Colors, Fonts } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useRouter } from "expo-router";
 import {
     AlertTriangle,
-    ChevronRight,
+    ArrowUpDown,
+    BarChart3,
+    Building2,
+    Calendar,
+    CheckCircle,
+    ClipboardList,
     Clock,
-    LogOut,
+    FileText,
+    Lightbulb,
     Package,
-    PawPrint
-} from 'lucide-react-native';
-import React from 'react';
+    Settings,
+    UserCircle2,
+    Users,
+} from "lucide-react-native";
+import React from "react";
 import {
     SafeAreaView,
     ScrollView,
+    StatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
-} from 'react-native';
+    View,
+} from "react-native";
 
 export default function OwnerDashboard({ username }: { username: string }) {
-  const logout = useAuthStore((state) => state.logout);
+  const router = useRouter();
+  const colorScheme = useColorScheme() ?? "light";
+  const theme = Colors[colorScheme];
+
+  const lowStockCount = 5;
+  const recommendationsCount = 4;
+  const expiringSoonCount = 8;
+  const pendingRequestsCount = 3;
+  const tasksCount = 4;
+  const overdueTasksCount = 2;
+
+  const handleNavigate = (destination: string) => {
+    if (destination === "inventory") {
+      router.push("/(tabs)/(inventory)/" as any);
+    } else if (destination === "transactions-hub") {
+      router.push("/(tabs)/(transactions)/" as any);
+    } else if (destination === "suppliers") {
+      // NEW: Point to the new suppliers folder
+      router.push("/(tabs)/(suppliers)/" as any);
+    } else {
+      router.push(`/(tabs)/${destination}` as any);
+    }
+  };
+
+  const kpis = [
+    {
+      label: "Low Stock",
+      value: lowStockCount,
+      icon: AlertTriangle,
+      color: theme.orange600,
+      destination: "low-stock",
+    },
+    {
+      label: "Recommendations",
+      value: recommendationsCount,
+      icon: Lightbulb,
+      color: theme.blue600,
+      destination: "recommendations",
+    },
+    {
+      label: "Expiring Soon",
+      value: expiringSoonCount,
+      icon: Clock,
+      color: theme.red600,
+      destination: "expiry-management-expiring",
+    },
+  ];
+
+  const navCards = [
+    {
+      title: "Approval Center",
+      description: "Review pending reorder requests",
+      icon: CheckCircle,
+      bg: theme.green50,
+      iconColor: theme.green600,
+      destination: "approval-center",
+      badge: pendingRequestsCount > 0 ? pendingRequestsCount : undefined,
+    },
+    {
+      title: "Tasks",
+      description: "Assign and monitor staff tasks",
+      icon: ClipboardList,
+      bg: theme.blue50,
+      iconColor: theme.blue600,
+      destination: "manager-tasks-list",
+      badge:
+        overdueTasksCount && overdueTasksCount > 0
+          ? overdueTasksCount
+          : tasksCount && tasksCount > 0
+            ? tasksCount
+            : undefined,
+    },
+    {
+      title: "Low Stock Items",
+      description: "Items below reorder point",
+      icon: AlertTriangle,
+      bg: theme.orange50,
+      iconColor: theme.orange600,
+      destination: "low-stock",
+    },
+    {
+      title: "Smart Recommendations",
+      description: "AI-powered suggestions",
+      icon: Lightbulb,
+      bg: "#FEFCE8",
+      iconColor: "#CA8A04",
+      destination: "recommendations",
+    },
+    {
+      title: "Expiry Management",
+      description: "Track expiring items",
+      icon: Calendar,
+      bg: theme.red50,
+      iconColor: theme.red600,
+      destination: "expiry-management",
+    },
+    {
+      title: "Orders",
+      description: "Draft & track purchase orders",
+      icon: FileText,
+      bg: theme.purple50,
+      iconColor: theme.purple600,
+      destination: "orders-hub",
+    },
+    {
+      title: "Analytics Dashboard",
+      description: "View insights and reports",
+      icon: BarChart3,
+      bg: "#EEF2FF",
+      iconColor: "#4F46E5",
+      destination: "analytics",
+    },
+    {
+      title: "Inventory Overview",
+      description: "View all inventory items",
+      icon: Package,
+      bg: theme.gray50,
+      iconColor: theme.gray600,
+      destination: "inventory", // This triggers the special case in handleNavigate
+    },
+    {
+      title: "Transactions Hub",
+      description: "Receive, Issue & Adjust",
+      icon: ArrowUpDown,
+      bg: theme.orange50,
+      iconColor: theme.orange600,
+      destination: "transactions-hub",
+    },
+    {
+      title: "User Management",
+      description: "Manage staff accounts",
+      icon: Users,
+      bg: "#F0FDFA",
+      iconColor: "#0D9488",
+      destination: "user-management",
+    },
+    {
+      title: "Suppliers",
+      description: "Manage supplier information",
+      icon: Building2,
+      bg: "#ECFEFF",
+      iconColor: "#0891B2",
+      destination: "suppliers",
+    },
+    {
+      title: "Reorder Settings",
+      description: "Configure reorder points",
+      icon: Settings,
+      bg: theme.gray50,
+      iconColor: theme.gray600,
+      destination: "reorder-settings",
+    },
+  ];
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <View style={styles.logoGroup}>
-            <View style={styles.iconCircle}>
-              <PawPrint size={24} color="white" />
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={theme.primary}
+        translucent={false}
+      />
+
+      <View style={[styles.headerWrapper, { backgroundColor: theme.primary }]}>
+        <SafeAreaView>
+          <View style={styles.headerContent}>
+            <View style={styles.headerTextGroup}>
+              <Text style={[styles.welcomeText, { fontFamily: Fonts?.sans }]}>
+                Welcome back,
+              </Text>
+              <Text style={[styles.userNameText, { fontFamily: Fonts?.bold }]}>
+                {username}
+              </Text>
+              <Text style={[styles.roleSubText, { fontFamily: Fonts?.sans }]}>
+                Owner
+              </Text>
             </View>
-            <View>
-              <Text style={styles.headerTitle}>Pet Shop Warehouse</Text>
-              <Text style={styles.headerSubtitle}>Staff Portal</Text>
-            </View>
+            <TouchableOpacity
+              style={[
+                styles.profileBtn,
+                { backgroundColor: "rgba(255, 255, 255, 0.1)" },
+              ]}
+              onPress={() => router.push("/profile" as any)}
+            >
+              <UserCircle2 size={28} color="white" />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity onPress={logout} style={styles.logoutBtn}>
-            <LogOut size={18} color="white" />
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.welcomeText}>Welcome, {username}</Text>
+        </SafeAreaView>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Stats Grid */}
-        <View style={styles.grid}>
-          <StatCard 
-            title="Total Items" 
-            value="147" 
-            label="Active stock" 
-            icon={<Package size={24} color="#2563EB" />}
-            borderColor="#DBEAFE"
-            textColor="#2563EB"
-          />
-          <StatCard 
-            title="Expiring Soon" 
-            value="8" 
-            label="Within 30 days" 
-            icon={<Clock size={24} color="#EA580C" />}
-            borderColor="#FFEDD5"
-            textColor="#EA580C"
-          />
-          <StatCard 
-            title="Expired Items" 
-            value="3" 
-            label="Needs attention" 
-            icon={<AlertTriangle size={24} color="#DC2626" />}
-            borderColor="#FEE2E2"
-            textColor="#DC2626"
-          />
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.kpiGrid}>
+          {kpis.map((kpi, idx) => (
+            <TouchableOpacity
+              key={idx}
+              style={[styles.kpiCard, { backgroundColor: theme.card }]}
+              onPress={() => handleNavigate(kpi.destination)}
+              activeOpacity={0.8}
+            >
+              <kpi.icon
+                size={24}
+                color={kpi.color}
+                style={{ marginBottom: 8 }}
+              />
+              <Text
+                style={[
+                  styles.kpiValue,
+                  { color: theme.textPrimary, fontFamily: Fonts?.bold },
+                ]}
+              >
+                {kpi.value}
+              </Text>
+              <Text
+                style={[
+                  styles.kpiLabel,
+                  { color: theme.textSecondary, fontFamily: Fonts?.sans },
+                ]}
+              >
+                {kpi.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
-        {/* Action List Placeholder */}
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <ActionItem title="Transaction Hub" subtitle="Issue or receive stock" />
-        <ActionItem title="Smart Recommendations" subtitle="Inventory optimization" />
-        <ActionItem title="Full Inventory" subtitle="View and search all items" />
+        <View style={styles.navCardsContainer}>
+          {navCards.map((card, idx) => (
+            <TouchableOpacity
+              key={idx}
+              style={[styles.navCard, { backgroundColor: theme.card }]}
+              onPress={() => handleNavigate(card.destination)}
+              activeOpacity={0.8}
+            >
+              <View
+                style={[styles.navCardIconBox, { backgroundColor: card.bg }]}
+              >
+                <card.icon size={24} color={card.iconColor} strokeWidth={2} />
+                {card.badge && (
+                  <View
+                    style={[
+                      styles.badgeContainer,
+                      { backgroundColor: theme.danger },
+                    ]}
+                  >
+                    <Text
+                      style={[styles.badgeText, { fontFamily: Fonts?.bold }]}
+                    >
+                      {card.badge}
+                    </Text>
+                  </View>
+                )}
+              </View>
+              <View style={styles.navCardTextGroup}>
+                <Text
+                  style={[
+                    styles.navCardTitle,
+                    { color: theme.textPrimary, fontFamily: Fonts?.bold },
+                  ]}
+                >
+                  {card.title}
+                </Text>
+                <Text
+                  style={[
+                    styles.navCardSub,
+                    { color: theme.textSecondary, fontFamily: Fonts?.sans },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {card.description}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
       </ScrollView>
-    </SafeAreaView>
-  );
-}
-
-// Reusable Stat Card
-function StatCard({ title, value, label, icon, borderColor, textColor }: any) {
-  return (
-    <View style={[styles.card, { borderLeftColor: textColor, borderLeftWidth: 4 }]}>
-      <View style={styles.cardHeader}>
-        {icon}
-        <Text style={styles.cardTitle}>{title}</Text>
-      </View>
-      <Text style={[styles.cardValue, { color: textColor }]}>{value}</Text>
-      <Text style={styles.cardLabel}>{label}</Text>
     </View>
   );
 }
 
-// Reusable Action Item
-function ActionItem({ title, subtitle }: { title: string, subtitle: string }) {
-  return (
-    <TouchableOpacity style={styles.actionItem}>
-      <View>
-        <Text style={styles.actionTitle}>{title}</Text>
-        <Text style={styles.actionSubtitle}>{subtitle}</Text>
-      </View>
-      <ChevronRight size={20} color="#94A3B8" />
-    </TouchableOpacity>
-  );
-}
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
-  header: {
-    backgroundColor: '#2563EB',
-    padding: 20,
-    paddingTop: 40,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+  container: { flex: 1 },
+
+  headerWrapper: { paddingBottom: 24 },
+  headerContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    paddingHorizontal: 24,
+    paddingTop: 24,
   },
-  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  logoGroup: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  iconCircle: { backgroundColor: 'rgba(255,255,255,0.2)', padding: 8, borderRadius: 12 },
-  headerTitle: { color: 'white', fontSize: 20, fontWeight: 'bold' },
-  headerSubtitle: { color: '#DBEAFE', fontSize: 12 },
-  welcomeText: { color: 'white', marginTop: 15, fontSize: 16, opacity: 0.9 },
-  logoutBtn: { padding: 8, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 10 },
-  scrollContent: { padding: 20 },
-  grid: { gap: 16, marginBottom: 24 },
-  card: {
-    backgroundColor: 'white',
+  headerTextGroup: { flex: 1 },
+  welcomeText: { color: "white", fontSize: 24, marginBottom: 4 },
+  userNameText: { color: "white", fontSize: 20, opacity: 0.9 },
+  roleSubText: { color: "white", fontSize: 14, opacity: 0.75, marginTop: 4 },
+  profileBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  scrollContainer: { padding: 16, paddingBottom: 80 },
+
+  kpiGrid: { flexDirection: "row", gap: 12, marginBottom: 24 },
+  kpiCard: {
+    flex: 1,
     padding: 16,
     borderRadius: 12,
-    shadowColor: '#000',
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 10,
+    shadowRadius: 4,
     elevation: 2,
   },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  cardTitle: { fontSize: 14, fontWeight: '600', color: '#64748B' },
-  cardValue: { fontSize: 28, fontWeight: 'bold' },
-  cardLabel: { fontSize: 12, color: '#94A3B8', marginTop: 4 },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#1E3A8A', marginBottom: 16 },
-  actionItem: {
-    backgroundColor: 'white',
+  kpiValue: { fontSize: 24, marginBottom: 4 },
+  kpiLabel: { fontSize: 12, textAlign: "center" },
+
+  navCardsContainer: { gap: 12 },
+  navCard: {
+    flexDirection: "row",
+    alignItems: "center",
     padding: 16,
     borderRadius: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  actionTitle: { fontSize: 16, fontWeight: '600', color: '#1E293B' },
-  actionSubtitle: { fontSize: 13, color: '#64748B', marginTop: 2 },
+  navCardIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
+    position: "relative",
+  },
+  badgeContainer: {
+    position: "absolute",
+    top: -6,
+    right: -6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "white",
+  },
+  badgeText: {
+    color: "white",
+    fontSize: 10,
+  },
+  navCardTextGroup: { flex: 1 },
+  navCardTitle: { fontSize: 16, marginBottom: 2 },
+  navCardSub: { fontSize: 14 },
 });
