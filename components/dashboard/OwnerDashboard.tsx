@@ -17,7 +17,7 @@ import {
     UserCircle2,
     Users,
 } from "lucide-react-native";
-import React from "react";
+import React, { useEffect } from "react";
 import {
     SafeAreaView,
     ScrollView,
@@ -28,17 +28,39 @@ import {
     View,
 } from "react-native";
 
+// 👇 NEW: Import the task store
+import { useTaskStore } from "@/store/useTaskStore";
+
 export default function OwnerDashboard({ username }: { username: string }) {
   const router = useRouter();
   const colorScheme = useColorScheme() ?? "light";
   const theme = Colors[colorScheme];
 
+  // 👇 NEW: Fetch tasks from the store
+  const { tasks, fetchTasks } = useTaskStore();
+
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  // 👇 NEW: Calculate real task metrics
+  const activeTasks = tasks.filter(
+    (t) => t.status !== "completed" && t.status !== "cancelled",
+  );
+  const tasksCount = activeTasks.length;
+
+  const overdueTasksCount = activeTasks.filter((t) => {
+    const due = new Date(t.dueDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return due < today;
+  }).length;
+
+  // Placeholder metrics for now (we can wire these up next!)
   const lowStockCount = 5;
   const recommendationsCount = 4;
   const expiringSoonCount = 8;
   const pendingRequestsCount = 3;
-  const tasksCount = 4;
-  const overdueTasksCount = 2;
 
   const handleNavigate = (destination: string) => {
     if (destination === "inventory") {
@@ -48,8 +70,12 @@ export default function OwnerDashboard({ username }: { username: string }) {
     } else if (destination === "suppliers") {
       router.push("/(tabs)/(suppliers)/" as any);
     } else if (destination === "purchase-orders") {
-      // NEW: Point to the purchase orders folder
       router.push("/(tabs)/(purchase-orders)/" as any);
+    } else if (destination === "user-management") {
+      router.push("/(tabs)/(users)/" as any);
+    } else if (destination === "tasks") {
+      // 👇 NEW: Route to the tasks folder
+      router.push("/(tabs)/(tasks)/" as any);
     } else {
       router.push(`/(tabs)/${destination}` as any);
     }
@@ -95,11 +121,11 @@ export default function OwnerDashboard({ username }: { username: string }) {
       icon: ClipboardList,
       bg: theme.blue50,
       iconColor: theme.blue600,
-      destination: "manager-tasks-list",
+      destination: "tasks", // 👇 Updated destination string
       badge:
-        overdueTasksCount && overdueTasksCount > 0
+        overdueTasksCount > 0
           ? overdueTasksCount
-          : tasksCount && tasksCount > 0
+          : tasksCount > 0
             ? tasksCount
             : undefined,
     },
@@ -133,7 +159,7 @@ export default function OwnerDashboard({ username }: { username: string }) {
       icon: FileText,
       bg: theme.purple50,
       iconColor: theme.purple600,
-      destination: "purchase-orders", 
+      destination: "purchase-orders",
     },
     {
       title: "Analytics Dashboard",
@@ -149,7 +175,7 @@ export default function OwnerDashboard({ username }: { username: string }) {
       icon: Package,
       bg: theme.gray50,
       iconColor: theme.gray600,
-      destination: "inventory", // This triggers the special case in handleNavigate
+      destination: "inventory",
     },
     {
       title: "Transactions Hub",
@@ -269,7 +295,7 @@ export default function OwnerDashboard({ username }: { username: string }) {
                 style={[styles.navCardIconBox, { backgroundColor: card.bg }]}
               >
                 <card.icon size={24} color={card.iconColor} strokeWidth={2} />
-                {card.badge && (
+                {card.badge !== undefined && (
                   <View
                     style={[
                       styles.badgeContainer,

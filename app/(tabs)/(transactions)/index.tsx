@@ -8,6 +8,7 @@ import {
     ChevronRight,
     Download,
     Edit3,
+    History,
     Upload,
 } from "lucide-react-native";
 import React from "react";
@@ -51,6 +52,14 @@ export default function TransactionsHubScreen() {
       iconColor: "#EA580C", // orange-600
       destination: "adjust",
     },
+    {
+      title: "Transaction History",
+      description: "View the audit log of all stock movements",
+      icon: History,
+      bg: "#F1F5F9", // slate-100
+      iconColor: "#475569", // slate-600
+      destination: "history",
+    },
   ];
 
   return (
@@ -63,7 +72,7 @@ export default function TransactionsHubScreen() {
 
       {/* Top Utility Header */}
       <Header
-        title="Inventory"
+        title="Transactions"
         onBack={() => router.back()}
         userRole={user?.role}
         onLogout={logout}

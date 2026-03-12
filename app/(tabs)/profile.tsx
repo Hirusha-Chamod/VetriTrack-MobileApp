@@ -5,12 +5,7 @@ import { authApi, UserProfile } from "@/services/authService";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useToastStore } from "@/store/useToastStore";
 import { useRouter } from "expo-router";
-import {
-    Home,
-    LogOut,
-    Mail,
-    User
-} from "lucide-react-native";
+import { Home, LogOut, Mail, User } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -22,7 +17,7 @@ import {
     Text,
     TouchableOpacity,
     TouchableWithoutFeedback,
-    View
+    View,
 } from "react-native";
 
 export default function ProfileScreen() {
@@ -38,7 +33,7 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  console.log("Current user from store:", user);
+
   useEffect(() => {
     fetchProfile();
   }, []);
