@@ -103,7 +103,7 @@ export default function InventoryScreen() {
         return "#64748B";
     }
   };
-
+  console.log("Applied Filters:", items);
   return (
     <View style={[styles.container, { backgroundColor: "#F9FAFB" }]}>
       <StatusBar barStyle="light-content" backgroundColor="#374151" />
@@ -194,7 +194,7 @@ export default function InventoryScreen() {
             <RefreshControl refreshing={isLoading} onRefresh={fetchItems} />
           }
           renderItem={({ item }) => {
-            const currentStock = 0;
+            const currentStock = item.currentStock || 0;
             const status = getStockStatus(currentStock, item.minStockLevel);
 
             return (

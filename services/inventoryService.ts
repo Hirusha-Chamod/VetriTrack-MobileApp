@@ -9,10 +9,10 @@ export interface InventoryItem {
   minStockLevel: number;
   unitPrice: number;
   notes?: string;
+  currentStock?: number;
   createdAt: string;
   updatedAt: string;
 }
-
 export interface StockBatch {
   _id: string;
   itemId: string | InventoryItem;

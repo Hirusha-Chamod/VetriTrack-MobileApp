@@ -1,13 +1,10 @@
 import api from "./api";
-import { InventoryItem } from "./inventoryService"; // Reusing your existing interface
-
-export type TransactionType = "RECEIVE" | "ISSUE" | "ADJUSTMENT";
 
 export interface Transaction {
   _id: string;
-  itemId: string | InventoryItem; // Can be a string ID or populated object
-  batchId?: string;
-  type: TransactionType;
+  itemId: any; // Populated InventoryItem object when fetched
+  batchId?: string; // Optional depending on the transaction type
+  type: "RECEIVE" | "ISSUE" | "ADJUSTMENT";
   quantity: number;
   reason: string;
   performedBy: string;
@@ -17,24 +14,24 @@ export interface Transaction {
 
 export interface CreateTransactionPayload {
   itemId: string;
-  batchId?: string; // Optional for 'ISSUE' (triggers FEFO on backend)
-  type: TransactionType;
+  batchId?: string;
+  batchLotNumber?: string;
+  expiryDate?: string;
+  supplierId?: string; 
+  type: 'RECEIVE' | 'ISSUE' | 'ADJUSTMENT';
   quantity: number;
   reason: string;
 }
-
 export const transactionApi = {
-  // Handles Receive, Issue (FEFO), and Adjustments
-  createTransaction: async (
-    data: CreateTransactionPayload,
-  ): Promise<Transaction> => {
-    const response = await api.post<Transaction>("/transactions", data);
+  // Fetch transaction history (useful for an audit log screen later)
+  getAll: async (): Promise<Transaction[]> => {
+    const response = await api.get<Transaction[]>("/transactions");
     return response.data;
   },
 
-  // Retrieves transaction history (Owner only based on your backend)
-  getAllTransactions: async (): Promise<Transaction[]> => {
-    const response = await api.get<Transaction[]>("/transactions");
+  // The main engine: Creates a transaction and updates stock levels in the backend
+  create: async (data: CreateTransactionPayload): Promise<Transaction> => {
+    const response = await api.post<Transaction>("/transactions", data);
     return response.data;
   },
 };

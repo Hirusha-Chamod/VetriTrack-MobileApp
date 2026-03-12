@@ -4,6 +4,7 @@ import {
     transactionApi,
 } from "@/services/transactionService";
 import { create } from "zustand";
+import { useInventoryStore } from "./useInventoryStore"; // To refresh inventory after a transaction
 
 interface TransactionState {
   transactions: Transaction[];
@@ -11,7 +12,7 @@ interface TransactionState {
   error: string | null;
 
   fetchTransactions: () => Promise<void>;
-  submitTransaction: (data: CreateTransactionPayload) => Promise<void>;
+  processTransaction: (data: CreateTransactionPayload) => Promise<Transaction>;
   clearError: () => void;
 }
 
@@ -23,38 +24,39 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
   fetchTransactions: async () => {
     set({ isLoading: true, error: null });
     try {
-      const transactions = await transactionApi.getAllTransactions();
+      const transactions = await transactionApi.getAll();
       set({ transactions, isLoading: false });
     } catch (error: any) {
       set({
         error:
           error.response?.data?.message ||
-          error.message ||
-          "Failed to fetch transactions",
+          "Failed to fetch transaction history",
         isLoading: false,
       });
     }
   },
 
-  submitTransaction: async (data: CreateTransactionPayload) => {
+  processTransaction: async (data: CreateTransactionPayload) => {
     set({ isLoading: true, error: null });
     try {
-      const newTransaction = await transactionApi.createTransaction(data);
+      const newTransaction = await transactionApi.create(data);
 
-      // Add the new transaction to the top of the list (since backend sorts desc)
+      // Add it to our local state log
       set((state) => ({
         transactions: [newTransaction, ...state.transactions],
         isLoading: false,
       }));
+
+      // CRITICAL: Force the Inventory store to refresh so the UI immediately shows the new stock levels!
+      useInventoryStore.getState().fetchItems();
+
+      return newTransaction;
     } catch (error: any) {
       set({
-        error:
-          error.response?.data?.message ||
-          error.message ||
-          "Transaction failed",
+        error: error.response?.data?.message || "Transaction failed",
         isLoading: false,
       });
-      throw error; // Re-throw so the UI can catch it and show a toast/alert
+      throw error;
     }
   },
 
