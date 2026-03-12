@@ -1,5 +1,7 @@
+import { Header } from "@/components/layout/Header";
 import { Colors, Fonts } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAuthStore } from "@/store/useAuthStore";
 import { useSupplierStore } from "@/store/useSupplierStore";
 import { useToastStore } from "@/store/useToastStore";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -11,7 +13,7 @@ import {
     Info,
     Mail,
     Save,
-    X
+    X,
 } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
@@ -31,6 +33,8 @@ import {
 export default function SupplierDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
   const colorScheme = useColorScheme() ?? "light";
   const theme = Colors[colorScheme];
 
@@ -145,6 +149,14 @@ export default function SupplierDetailScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <StatusBar barStyle="light-content" backgroundColor="#0891B2" />
+      <Header
+        title="Supplier Details"
+        onBack={() => router.back()}
+        userRole={user?.role}
+        onLogout={logout}
+        onDashboard={() => router.push("/(tabs)/" as any)}
+        onProfile={() => router.push("/profile" as any)}
+      />
 
       {/* Header */}
       <View style={[styles.headerWrapper, { backgroundColor: "#0891B2" }]}>

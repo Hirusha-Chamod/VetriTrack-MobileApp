@@ -1,5 +1,7 @@
+import { Header } from "@/components/layout/Header";
 import { Colors, Fonts } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAuthStore } from "@/store/useAuthStore";
 import { useInventoryStore } from "@/store/useInventoryStore";
 import { useToastStore } from "@/store/useToastStore";
 import { useRouter } from "expo-router";
@@ -23,6 +25,8 @@ import {
 
 export default function AddInventoryItemScreen() {
   const router = useRouter();
+  const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
   const colorScheme = useColorScheme() ?? "light";
   const theme = Colors[colorScheme];
   const { createItem, isLoading } = useInventoryStore();
@@ -122,6 +126,14 @@ export default function AddInventoryItemScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <StatusBar barStyle="light-content" backgroundColor="#0891B2" />
+      <Header
+        title="Add Item"
+        onBack={() => router.back()}
+        userRole={user?.role}
+        onLogout={logout}
+        onDashboard={() => router.push("/(tabs)/" as any)}
+        onProfile={() => router.push("/profile" as any)}
+      />
 
       {/* Header - Matches Figma Cyan Style */}
       <View style={[styles.headerWrapper, { backgroundColor: "#0891B2" }]}>

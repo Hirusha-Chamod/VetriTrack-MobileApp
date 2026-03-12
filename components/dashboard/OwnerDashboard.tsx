@@ -46,8 +46,10 @@ export default function OwnerDashboard({ username }: { username: string }) {
     } else if (destination === "transactions-hub") {
       router.push("/(tabs)/(transactions)/" as any);
     } else if (destination === "suppliers") {
-      // NEW: Point to the new suppliers folder
       router.push("/(tabs)/(suppliers)/" as any);
+    } else if (destination === "purchase-orders") {
+      // NEW: Point to the purchase orders folder
+      router.push("/(tabs)/(purchase-orders)/" as any);
     } else {
       router.push(`/(tabs)/${destination}` as any);
     }
@@ -131,7 +133,7 @@ export default function OwnerDashboard({ username }: { username: string }) {
       icon: FileText,
       bg: theme.purple50,
       iconColor: theme.purple600,
-      destination: "orders-hub",
+      destination: "purchase-orders", 
     },
     {
       title: "Analytics Dashboard",

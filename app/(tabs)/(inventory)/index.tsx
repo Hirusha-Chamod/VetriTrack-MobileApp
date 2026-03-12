@@ -1,14 +1,10 @@
+import { Header } from "@/components/layout/Header";
 import { Colors, Fonts } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useInventoryStore } from "@/store/useInventoryStore";
 import { useRouter } from "expo-router";
-import {
-    Package,
-    Plus,
-    Search,
-    SlidersHorizontal
-} from "lucide-react-native";
+import { Package, Plus, Search, SlidersHorizontal } from "lucide-react-native";
 import React, { useEffect, useMemo, useState } from "react";
 import {
     ActivityIndicator,
@@ -20,7 +16,7 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View
+    View,
 } from "react-native";
 
 interface FilterState {
@@ -32,6 +28,7 @@ interface FilterState {
 export default function InventoryScreen() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
   const colorScheme = useColorScheme() ?? "light";
   const theme = Colors[colorScheme];
 
@@ -110,6 +107,14 @@ export default function InventoryScreen() {
   return (
     <View style={[styles.container, { backgroundColor: "#F9FAFB" }]}>
       <StatusBar barStyle="light-content" backgroundColor="#374151" />
+      <Header
+        title="Inventory"
+        onBack={() => router.back()}
+        userRole={user?.role}
+        onLogout={logout}
+        onDashboard={() => router.push("/(tabs)/" as any)}
+        onProfile={() => router.push("/profile" as any)}
+      />
 
       {/* Header - Matches Figma gray-700 */}
       <View style={styles.headerWrapper}>

@@ -1,5 +1,7 @@
+import { Header } from "@/components/layout/Header";
 import { Colors, Fonts } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAuthStore } from "@/store/useAuthStore";
 import { useRouter } from "expo-router";
 import { ArrowUpDown, Download, Edit3, Upload } from "lucide-react-native";
 import React from "react";
@@ -17,6 +19,8 @@ type Destination = "receive" | "issue" | "adjust";
 
 export default function TransactionsHubScreen() {
   const router = useRouter();
+  const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
   const colorScheme = useColorScheme() ?? "light";
   const theme = Colors[colorScheme];
 
@@ -58,6 +62,14 @@ export default function TransactionsHubScreen() {
         barStyle="light-content"
         backgroundColor="#9333EA"
         translucent={false}
+      />
+      <Header
+        title="Transactions"
+        onBack={() => router.back()}
+        userRole={user?.role}
+        onLogout={logout}
+        onDashboard={() => router.push("/(tabs)/" as any)}
+        onProfile={() => router.push("/profile" as any)}
       />
 
       {/* Header - Purple 600 */}
