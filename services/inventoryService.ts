@@ -121,4 +121,9 @@ export const inventoryApi = {
     );
     return response.data;
   },
+
+  updateItem: async (itemId: string, updates: Partial<InventoryItem>): Promise<InventoryItem> => {
+    const response = await api.patch<InventoryItem>(`/inventory/item/${itemId}`, updates);
+    return response.data;
+  },
 };

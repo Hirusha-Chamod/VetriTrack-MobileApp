@@ -198,7 +198,13 @@ export default function InventoryScreen() {
             const status = getStockStatus(currentStock, item.minStockLevel);
 
             return (
-              <TouchableOpacity style={styles.itemCard} activeOpacity={0.7}>
+              <TouchableOpacity
+                style={styles.itemCard}
+                activeOpacity={0.7}
+                onPress={() =>
+                  router.push(`/(tabs)/(inventory)/${item._id}` as any)
+                }
+              >
                 <View style={styles.cardTop}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.itemName}>{item.itemName}</Text>

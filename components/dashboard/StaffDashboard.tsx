@@ -77,6 +77,8 @@ export default function StaffDashboard() {
       router.push("/(tabs)/(transactions)/" as any);
     else if (destination === "staff-tasks-list")
       router.push("/(tabs)/(tasks)/" as any);
+    else if (destination === "my-requests")
+      router.push("/(tabs)/(requests)/" as any);
     else console.log("Navigate to:", destination);
   };
 

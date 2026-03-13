@@ -1,5 +1,6 @@
 import { Colors, Fonts } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAuthStore } from "@/store/useAuthStore";
 import { useTaskStore } from "@/store/useTaskStore";
 import { useUserStore } from "@/store/useUserStore";
 import { useRouter } from "expo-router";
@@ -34,20 +35,29 @@ type StatusFilter =
   | "cancelled";
 type DueFilter = "all" | "today" | "this-week" | "overdue";
 
-export default function ManagerTasksListScreen() {
+export default function TasksListScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme() ?? "light";
   const theme = Colors[colorScheme];
 
-  const { tasks, fetchTasks, isLoading } = useTaskStore();
+
+  const { user } = useAuthStore();
+  const isOwner = user?.role === "owner";
+
+  const { tasks, fetchTasks, fetchMyTasks, isLoading } = useTaskStore();
   const { users, fetchUsers } = useUserStore();
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [dueFilter, setDueFilter] = useState<DueFilter>("all");
 
   useEffect(() => {
-    fetchTasks();
-    if (users.length === 0) fetchUsers();
+    // 👇 Fetch specific tasks based on role
+    if (isOwner) {
+      fetchTasks();
+      if (users.length === 0) fetchUsers();
+    } else {
+      fetchMyTasks();
+    }
   }, []);
 
   const isOverdue = (dueDate: string) => {
@@ -69,7 +79,11 @@ export default function ManagerTasksListScreen() {
   };
 
   // Filter Tasks
-  let filteredTasks = tasks;
+
+  let filteredTasks = isOwner
+    ? tasks
+    : tasks.filter((t) => t.status !== "cancelled");
+
   if (statusFilter !== "all")
     filteredTasks = filteredTasks.filter((t) => t.status === statusFilter);
   if (dueFilter === "today")
@@ -173,10 +187,12 @@ export default function ManagerTasksListScreen() {
         </View>
 
         <View style={styles.taskFooter}>
-          <View style={styles.footerItem}>
-            <UserIcon size={14} color="#6B7280" style={{ marginRight: 6 }} />
-            <Text style={styles.footerText}>{item.assignedToName}</Text>
-          </View>
+          {isOwner && (
+            <View style={styles.footerItem}>
+              <UserIcon size={14} color="#6B7280" style={{ marginRight: 6 }} />
+              <Text style={styles.footerText}>{item.assignedToName}</Text>
+            </View>
+          )}
           <View style={styles.footerItem}>
             <Calendar size={14} color="#6B7280" style={{ marginRight: 6 }} />
             <Text style={styles.footerText}>
@@ -211,8 +227,9 @@ export default function ManagerTasksListScreen() {
                 <ClipboardList size={20} color="white" />
               </View>
               <View style={{ flex: 1 }}>
+
                 <Text style={[styles.headerTitle, { fontFamily: Fonts?.bold }]}>
-                  Tasks
+                  {isOwner ? "All Tasks" : "My Tasks"}
                 </Text>
                 <Text
                   style={[styles.headerSubtitle, { fontFamily: Fonts?.sans }]}
@@ -221,15 +238,20 @@ export default function ManagerTasksListScreen() {
                 </Text>
               </View>
             </View>
-            <TouchableOpacity
-              style={styles.headerAddBtn}
-              onPress={() => router.push("/(tabs)/(tasks)/create" as any)}
-            >
-              <Plus size={16} color="#2563EB" style={{ marginRight: 4 }} />
-              <Text style={[styles.headerAddText, { fontFamily: Fonts?.bold }]}>
-                Create
-              </Text>
-            </TouchableOpacity>
+
+            {isOwner && (
+              <TouchableOpacity
+                style={styles.headerAddBtn}
+                onPress={() => router.push("/(tabs)/(tasks)/create" as any)}
+              >
+                <Plus size={16} color="#2563EB" style={{ marginRight: 4 }} />
+                <Text
+                  style={[styles.headerAddText, { fontFamily: Fonts?.bold }]}
+                >
+                  Create
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </SafeAreaView>
       </View>
@@ -242,31 +264,35 @@ export default function ManagerTasksListScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filterScroll}
         >
-          {["all", "assigned", "in-progress", "completed", "cancelled"].map(
-            (s) => (
-              <TouchableOpacity
-                key={s}
+          {[
+            "all",
+            "assigned",
+            "in-progress",
+            "completed",
+            ...(isOwner ? ["cancelled"] : []),
+          ].map((s) => (
+            <TouchableOpacity
+              key={s}
+              style={[
+                styles.filterChip,
+                statusFilter === s && styles.filterChipActive,
+              ]}
+              onPress={() => setStatusFilter(s as StatusFilter)}
+            >
+              <Text
                 style={[
-                  styles.filterChip,
-                  statusFilter === s && styles.filterChipActive,
+                  styles.filterChipText,
+                  statusFilter === s && styles.filterChipTextActive,
                 ]}
-                onPress={() => setStatusFilter(s as StatusFilter)}
               >
-                <Text
-                  style={[
-                    styles.filterChipText,
-                    statusFilter === s && styles.filterChipTextActive,
-                  ]}
-                >
-                  {s === "all"
-                    ? "All"
-                    : s === "in-progress"
-                      ? "In Progress"
-                      : s.charAt(0).toUpperCase() + s.slice(1)}
-                </Text>
-              </TouchableOpacity>
-            ),
-          )}
+                {s === "all"
+                  ? "All"
+                  : s === "in-progress"
+                    ? "In Progress"
+                    : s.charAt(0).toUpperCase() + s.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </ScrollView>
 
         <Text style={[styles.filterLabel, { marginTop: 12 }]}>Due Date</Text>
@@ -313,7 +339,10 @@ export default function ManagerTasksListScreen() {
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={isLoading} onRefresh={fetchTasks} />
+            <RefreshControl
+              refreshing={isLoading}
+              onRefresh={isOwner ? fetchTasks : fetchMyTasks}
+            />
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>

@@ -3,9 +3,9 @@ import {
     ExpiryReport,
     inventoryApi,
     InventoryItem,
-    LowStockAlert
-} from '@/services/inventoryService';
-import { create } from 'zustand';
+    LowStockAlert,
+} from "@/services/inventoryService";
+import { create } from "zustand";
 
 interface InventoryState {
   items: InventoryItem[];
@@ -13,11 +13,15 @@ interface InventoryState {
   expiryReport: ExpiryReport | null;
   isLoading: boolean;
   error: string | null;
-  
+
   fetchItems: () => Promise<void>;
   fetchLowStockAlerts: () => Promise<void>;
   fetchExpiryReport: () => Promise<void>;
   createItem: (data: CreateItemPayload) => Promise<void>;
+  updateItem: (
+    itemId: string,
+    updates: Partial<InventoryItem>,
+  ) => Promise<void>;
   updateReorderLevel: (itemId: string, minLevel: number) => Promise<void>;
   clearError: () => void;
 }
@@ -35,7 +39,10 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
       const items = await inventoryApi.getAllItems();
       set({ items, isLoading: false });
     } catch (error: any) {
-      set({ error: error.message || 'Failed to fetch inventory items', isLoading: false });
+      set({
+        error: error.message || "Failed to fetch inventory items",
+        isLoading: false,
+      });
     }
   },
 
@@ -45,7 +52,10 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
       const alerts = await inventoryApi.getLowStockAlerts();
       set({ lowStockAlerts: alerts, isLoading: false });
     } catch (error: any) {
-      set({ error: error.message || 'Failed to fetch low stock alerts', isLoading: false });
+      set({
+        error: error.message || "Failed to fetch low stock alerts",
+        isLoading: false,
+      });
     }
   },
 
@@ -55,7 +65,10 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
       const report = await inventoryApi.getExpiryReport();
       set({ expiryReport: report, isLoading: false });
     } catch (error: any) {
-      set({ error: error.message || 'Failed to fetch expiry report', isLoading: false });
+      set({
+        error: error.message || "Failed to fetch expiry report",
+        isLoading: false,
+      });
     }
   },
 
@@ -63,12 +76,29 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const newItem = await inventoryApi.createItem(data);
-      set((state) => ({ 
+      set((state) => ({
         items: [...state.items, newItem],
-        isLoading: false 
+        isLoading: false,
       }));
     } catch (error: any) {
-      set({ error: error.message || 'Failed to create item', isLoading: false });
+      set({
+        error: error.message || "Failed to create item",
+        isLoading: false,
+      });
+      throw error;
+    }
+  },
+
+  updateItem: async (itemId: string, updates: Partial<InventoryItem>) => {
+    set({ isLoading: true, error: null });
+    try {
+      await inventoryApi.updateItem(itemId, updates);
+      await get().fetchItems(); // Refresh the list
+    } catch (error: any) {
+      set({
+        error: error.message || "Failed to update item",
+        isLoading: false,
+      });
       throw error;
     }
   },
@@ -76,13 +106,21 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   updateReorderLevel: async (itemId: string, minLevel: number) => {
     set({ isLoading: true, error: null });
     try {
-      const updatedItem = await inventoryApi.updateReorderLevel(itemId, minLevel);
+      const updatedItem = await inventoryApi.updateReorderLevel(
+        itemId,
+        minLevel,
+      );
       set((state) => ({
-        items: state.items.map(item => item._id === itemId ? updatedItem : item),
-        isLoading: false
+        items: state.items.map((item) =>
+          item._id === itemId ? updatedItem : item,
+        ),
+        isLoading: false,
       }));
     } catch (error: any) {
-      set({ error: error.message || 'Failed to update reorder level', isLoading: false });
+      set({
+        error: error.message || "Failed to update reorder level",
+        isLoading: false,
+      });
       throw error;
     }
   },

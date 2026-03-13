@@ -1,18 +1,21 @@
 import { Colors, Fonts } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { TaskStatus } from "@/services/taskService";
+import { useAuthStore } from "@/store/useAuthStore";
 import { useTaskStore } from "@/store/useTaskStore";
 import { useToastStore } from "@/store/useToastStore";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
     AlertTriangle,
     Calendar,
+    ChevronDown,
     ChevronLeft,
     ClipboardList,
     Package,
     User as UserIcon,
-    X
+    X,
 } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
     Modal,
@@ -33,11 +36,23 @@ export default function TaskDetailScreen() {
   const theme = Colors[colorScheme];
   const showToast = useToastStore((state) => state.showToast);
 
+  const { user } = useAuthStore();
+  const isOwner = user?.role === "owner";
+
   const { tasks, updateTaskStatus, isLoading } = useTaskStore();
   const task = tasks.find((t) => t.id === id);
 
+  // Modal / Dropdown states
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
+
+  // Staff states
+  const [newStatus, setNewStatus] = useState<TaskStatus>("assigned");
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+
+  useEffect(() => {
+    if (task) setNewStatus(task.status as TaskStatus);
+  }, [task]);
 
   if (!task) return null;
 
@@ -45,6 +60,8 @@ export default function TaskDetailScreen() {
     new Date(task.dueDate) < new Date(new Date().setHours(0, 0, 0, 0)) &&
     task.status !== "completed" &&
     task.status !== "cancelled";
+
+  const canEditStatus = task.status !== "cancelled";
 
   const handleCancelTask = async () => {
     if (!cancelReason.trim()) {
@@ -58,6 +75,17 @@ export default function TaskDetailScreen() {
       router.back();
     } catch (error: any) {
       showToast(error.message || "Failed to cancel task", "error");
+    }
+  };
+
+  const handleSaveStatus = async () => {
+    if (newStatus === task.status) return;
+    try {
+      await updateTaskStatus(task.id, newStatus);
+      showToast("Task status updated!", "success");
+      router.back();
+    } catch (error: any) {
+      showToast(error.message || "Failed to update status", "error");
     }
   };
 
@@ -85,7 +113,6 @@ export default function TaskDetailScreen() {
         translucent={false}
       />
 
-      {/* Header - Blue 600 */}
       <View style={[styles.headerWrapper, { backgroundColor: "#2563EB" }]}>
         <SafeAreaView>
           <View style={styles.headerContent}>
@@ -107,7 +134,9 @@ export default function TaskDetailScreen() {
                 <Text
                   style={[styles.headerSubtitle, { fontFamily: Fonts?.sans }]}
                 >
-                  Review task information
+                  {isOwner
+                    ? "Review task information"
+                    : "View and update task status"}
                 </Text>
               </View>
             </View>
@@ -119,7 +148,6 @@ export default function TaskDetailScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Main Task Info */}
         <View style={styles.card}>
           <Text style={[styles.taskTitle, { fontFamily: Fonts?.bold }]}>
             {task.title}
@@ -186,14 +214,18 @@ export default function TaskDetailScreen() {
 
           <View style={styles.gridInfo}>
             <View style={styles.gridItem}>
-              <Text style={styles.gridLabel}>Assigned To</Text>
+              <Text style={styles.gridLabel}>
+                {isOwner ? "Assigned To" : "Assigned By"}
+              </Text>
               <View style={styles.gridValueRow}>
                 <UserIcon
                   size={16}
                   color="#6B7280"
                   style={{ marginRight: 6 }}
                 />
-                <Text style={styles.gridValue}>{task.assignedToName}</Text>
+                <Text style={styles.gridValue}>
+                  {isOwner ? task.assignedToName : task.createdByName}
+                </Text>
               </View>
             </View>
             <View style={styles.gridItem}>
@@ -209,22 +241,9 @@ export default function TaskDetailScreen() {
                 </Text>
               </View>
             </View>
-            <View style={styles.gridItem}>
-              <Text style={styles.gridLabel}>Created By</Text>
-              <Text style={[styles.gridValue, { marginLeft: 2 }]}>
-                {task.createdByName}
-              </Text>
-            </View>
-            <View style={styles.gridItem}>
-              <Text style={styles.gridLabel}>Created On</Text>
-              <Text style={[styles.gridValue, { marginLeft: 2 }]}>
-                {new Date(task.createdAt).toLocaleDateString("en-GB")}
-              </Text>
-            </View>
           </View>
         </View>
 
-        {/* Linked Record (If applicable) */}
         {task.linkedRecordName && (
           <View style={styles.card}>
             <Text style={[styles.sectionTitle, { fontFamily: Fonts?.bold }]}>
@@ -246,8 +265,107 @@ export default function TaskDetailScreen() {
           </View>
         )}
 
-        {/* Manager Actions */}
-        {task.status !== "cancelled" && task.status !== "completed" && (
+        {/* --- STAFF ACTIONS --- */}
+        {!isOwner && (
+          <View style={styles.card}>
+            <Text style={[styles.sectionTitle, { fontFamily: Fonts?.bold }]}>
+              Update Status
+            </Text>
+            {canEditStatus ? (
+              <View style={{ zIndex: 10 }}>
+                <Text style={[styles.sectionLabel, { marginBottom: 8 }]}>
+                  Current Status
+                </Text>
+
+                {/* Native Dropdown mimicking Figma <Select> */}
+                <TouchableOpacity
+                  style={[
+                    styles.selectTrigger,
+                    !canEditStatus && styles.selectDisabled,
+                  ]}
+                  onPress={() =>
+                    canEditStatus && setShowStatusDropdown(!showStatusDropdown)
+                  }
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.selectValue}>
+                    {newStatus === "assigned"
+                      ? "Assigned"
+                      : newStatus === "in-progress"
+                        ? "In Progress"
+                        : "Completed"}
+                  </Text>
+                  <ChevronDown size={20} color="#6B7280" />
+                </TouchableOpacity>
+
+                {showStatusDropdown && (
+                  <View style={styles.selectContent}>
+                    <TouchableOpacity
+                      style={styles.selectItem}
+                      onPress={() => {
+                        setNewStatus("assigned");
+                        setShowStatusDropdown(false);
+                      }}
+                    >
+                      <Text style={styles.selectItemText}>Assigned</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.selectItem}
+                      onPress={() => {
+                        setNewStatus("in-progress");
+                        setShowStatusDropdown(false);
+                      }}
+                    >
+                      <Text style={styles.selectItemText}>In Progress</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.selectItem, { borderBottomWidth: 0 }]}
+                      onPress={() => {
+                        setNewStatus("completed");
+                        setShowStatusDropdown(false);
+                      }}
+                    >
+                      <Text style={styles.selectItemText}>Completed</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                <View style={styles.tipBox}>
+                  <Text style={styles.tipText}>
+                    <Text style={{ fontWeight: "bold" }}>Tip:</Text> Update the
+                    task status as you progress. Mark as "Completed" when
+                    finished.
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={[
+                    styles.saveStatusBtn,
+                    newStatus === task.status && { opacity: 0.5 },
+                  ]}
+                  onPress={handleSaveStatus}
+                  disabled={newStatus === task.status || isLoading}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <Text style={styles.saveStatusBtnText}>Save Status</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.cancelledBox}>
+                <Text style={styles.cancelledBoxText}>
+                  This task has been cancelled by the manager and cannot be
+                  updated.
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* --- MANAGER ACTIONS --- */}
+        {isOwner && canEditStatus && task.status !== "completed" && (
           <View style={styles.card}>
             <Text style={[styles.sectionTitle, { fontFamily: Fonts?.bold }]}>
               Manager Actions
@@ -266,7 +384,7 @@ export default function TaskDetailScreen() {
         )}
       </ScrollView>
 
-      {/* Cancel Modal */}
+      {/* Cancel Modal (Manager Only) */}
       <Modal visible={showCancelModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -282,7 +400,6 @@ export default function TaskDetailScreen() {
               Are you sure you want to cancel this task? Please provide a
               reason.
             </Text>
-
             <TextInput
               style={styles.modalInput}
               placeholder="Reason for cancellation..."
@@ -291,7 +408,6 @@ export default function TaskDetailScreen() {
               multiline
               textAlignVertical="top"
             />
-
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={styles.modalBtnOutline}
@@ -408,6 +524,59 @@ const styles = StyleSheet.create({
   linkedType: { fontSize: 12, color: "#6B7280", marginBottom: 2 },
   linkedName: { fontSize: 14, fontWeight: "500", color: "#111827" },
 
+  // Native Dropdown Styles
+  selectTrigger: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    height: 44,
+    backgroundColor: "#F9FAFB",
+    marginBottom: 12,
+  },
+  selectDisabled: { opacity: 0.6, backgroundColor: "#F3F4F6" },
+  selectValue: { fontSize: 15, color: "#111827" },
+  selectContent: {
+    backgroundColor: "white",
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    borderRadius: 8,
+    marginBottom: 16,
+    overflow: "hidden",
+  },
+  selectItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F4F6",
+  },
+  selectItemText: { fontSize: 15, color: "#111827" },
+
+  tipBox: {
+    backgroundColor: "#EFF6FF",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  tipText: { color: "#1E3A8A", fontSize: 13, lineHeight: 18 },
+  saveStatusBtn: {
+    backgroundColor: "#2563EB",
+    padding: 14,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  saveStatusBtnText: { color: "white", fontWeight: "bold", fontSize: 15 },
+  cancelledBox: {
+    backgroundColor: "#F3F4F6",
+    padding: 16,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  cancelledBoxText: { color: "#4B5563", fontSize: 14, textAlign: "center" },
+
+  // Manager Cancel Styles
   helperText: {
     fontSize: 14,
     color: "#6B7280",
