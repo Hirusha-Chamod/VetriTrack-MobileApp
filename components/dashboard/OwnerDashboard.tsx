@@ -1,5 +1,8 @@
 import { Colors, Fonts } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useApprovalStore } from "@/store/useApprovalStore";
+import { useInventoryStore } from "@/store/useInventoryStore";
+import { useTaskStore } from "@/store/useTaskStore";
 import { useRouter } from "expo-router";
 import {
     AlertTriangle,
@@ -28,22 +31,25 @@ import {
     View,
 } from "react-native";
 
-// 👇 NEW: Import the task store
-import { useTaskStore } from "@/store/useTaskStore";
-
 export default function OwnerDashboard({ username }: { username: string }) {
   const router = useRouter();
   const colorScheme = useColorScheme() ?? "light";
   const theme = Colors[colorScheme];
 
-  // 👇 NEW: Fetch tasks from the store
   const { tasks, fetchTasks } = useTaskStore();
+  const { pendingRequests, fetchPendingRequests } = useApprovalStore();
+
+  const { items: inventoryItems, fetchItems: fetchInventory } =
+    useInventoryStore();
 
   useEffect(() => {
     fetchTasks();
+    fetchPendingRequests();
+    fetchInventory(); 
   }, []);
 
-  // 👇 NEW: Calculate real task metrics
+  const pendingRequestsCount = pendingRequests.length;
+
   const activeTasks = tasks.filter(
     (t) => t.status !== "completed" && t.status !== "cancelled",
   );
@@ -56,11 +62,17 @@ export default function OwnerDashboard({ username }: { username: string }) {
     return due < today;
   }).length;
 
-  // Placeholder metrics for now (we can wire these up next!)
-  const lowStockCount = 5;
+
+  const lowStockCount = inventoryItems.filter((item) => {
+    const current = item.currentStock || 0;
+    return (
+      current <= (item.minStockLevel || 0) && (item.minStockLevel || 0) > 0
+    );
+  }).length;
+
+  // Placeholder metrics for now
   const recommendationsCount = 4;
   const expiringSoonCount = 8;
-  const pendingRequestsCount = 3;
 
   const handleNavigate = (destination: string) => {
     if (destination === "inventory") {
@@ -74,8 +86,12 @@ export default function OwnerDashboard({ username }: { username: string }) {
     } else if (destination === "user-management") {
       router.push("/(tabs)/(users)/" as any);
     } else if (destination === "tasks") {
-      // 👇 NEW: Route to the tasks folder
       router.push("/(tabs)/(tasks)/" as any);
+    } else if (destination === "approval-center") {
+      router.push("/(tabs)/(approvals)/" as any);
+    } else if (destination === "low-stock") {
+      // 👇 NEW: Explicitly route to our new low-stock folder
+      router.push("/(tabs)/(low-stock)/" as any);
     } else {
       router.push(`/(tabs)/${destination}` as any);
     }

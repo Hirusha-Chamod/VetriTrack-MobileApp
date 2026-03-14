@@ -12,6 +12,7 @@ export interface ApprovalRequest {
   urgency: "high" | "medium" | "low";
   reason: string;
   status: "pending" | "approved" | "rejected";
+  source: "manual" | "low-stock" | "recommendation";
   createdAt: string;
 }
 
@@ -22,6 +23,7 @@ export interface CreateRequestPayload {
   supplierId: string;
   unitPrice: number;
   urgency: "high" | "medium" | "low";
+  source?: "manual" | "low-stock" | "recommendation";
   reason: string;
 }
 
@@ -46,10 +48,12 @@ export const approvalApi = {
   updateStatus: async (
     id: string,
     status: "approved" | "rejected",
+    finalQuantity?: number, 
+    finalSupplierId?: string, 
   ): Promise<ApprovalRequest> => {
     const response = await api.patch<ApprovalRequest>(
       `/approvals/${id}/status`,
-      { status },
+      { status, finalQuantity, finalSupplierId }, 
     );
     return response.data;
   },

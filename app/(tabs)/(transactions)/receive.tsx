@@ -32,7 +32,7 @@ export default function ReceiveStockScreen() {
   const { items: inventoryItems, fetchItems } = useInventoryStore();
 
   const [selectedPOId, setSelectedPOId] = useState<string>("");
-
+    console.log("All POs:", purchaseOrders);
   useEffect(() => {
     fetchPurchaseOrders();
     if (inventoryItems.length === 0) fetchItems();

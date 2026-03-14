@@ -4,6 +4,7 @@ import { useInventoryStore } from "@/store/useInventoryStore";
 import { usePurchaseOrderStore } from "@/store/usePurchaseOrderStore";
 import { useToastStore } from "@/store/useToastStore";
 import { useTransactionStore } from "@/store/useTransactionStore";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
     Calendar,
@@ -13,10 +14,11 @@ import {
     Hash,
     Package,
 } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
+    Modal,
     Platform,
     SafeAreaView,
     ScrollView,
@@ -62,6 +64,20 @@ export default function ReceiveLineItemScreen() {
   const [notes, setNotes] = useState<string>("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Date Picker State
+  const [date, setDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  useEffect(() => {
+    // Reset all inputs whenever we navigate to a new PO or Item
+    setQuantityReceived(remaining.toString());
+    setBatchLotNumber("");
+    setExpiryDate("");
+    setNotes("");
+    setErrors({});
+    setDate(new Date());
+  }, [poId, itemId, remaining]);
+
   if (!po || !poItem) {
     return (
       <View
@@ -92,6 +108,19 @@ export default function ReceiveLineItemScreen() {
       ? (po.supplierId as any).supplierName
       : "Unknown Supplier";
 
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === "android") {
+      setShowDatePicker(false); // Android picker closes automatically
+    }
+    if (selectedDate) {
+      setDate(selectedDate);
+      // Format as YYYY-MM-DD
+      const formattedDate = selectedDate.toISOString().split("T")[0];
+      setExpiryDate(formattedDate);
+      setErrors({ ...errors, expiryDate: "" });
+    }
+  };
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     const qty = parseInt(quantityReceived);
@@ -102,15 +131,8 @@ export default function ReceiveLineItemScreen() {
       newErrors.quantity = `Cannot exceed remaining quantity (${remaining})`;
     if (!batchLotNumber.trim())
       newErrors.batchLotNumber = "Batch/Lot number is required";
-
     if (!expiryDate.trim()) {
       newErrors.expiryDate = "Expiry date is required";
-    } else {
-      // Basic YYYY-MM-DD validation
-      const regex = /^\d{4}-\d{2}-\d{2}$/;
-      if (!regex.test(expiryDate)) {
-        newErrors.expiryDate = "Format must be YYYY-MM-DD";
-      }
     }
 
     setErrors(newErrors);
@@ -123,7 +145,6 @@ export default function ReceiveLineItemScreen() {
     const qty = parseInt(quantityReceived);
 
     try {
-      // Safely grab the ID whether it is populated or a string
       const actualSupplierId =
         typeof po.supplierId === "object"
           ? (po.supplierId as any)._id
@@ -131,7 +152,7 @@ export default function ReceiveLineItemScreen() {
 
       await processTransaction({
         itemId: itemId,
-        supplierId: actualSupplierId, // <--- ADD THIS LINE!
+        supplierId: actualSupplierId,
         type: "RECEIVE",
         quantity: qty,
         reason: `PO Receipt: ${po.poNumber} (Batch: ${batchLotNumber.trim()})`,
@@ -278,26 +299,30 @@ export default function ReceiveLineItemScreen() {
               )}
             </View>
 
+            {/* EXPIRY DATE PICKER */}
             <View>
               <Text style={styles.inputLabel}>
                 Expiry Date <Text style={{ color: "#DC2626" }}>*</Text>
               </Text>
-              <View style={styles.inputIconWrapper}>
+              <TouchableOpacity
+                style={[
+                  styles.input,
+                  styles.dateInputWrapper,
+                  errors.expiryDate && styles.inputError,
+                ]}
+                activeOpacity={0.7}
+                onPress={() => setShowDatePicker(true)}
+              >
                 <Calendar size={20} color="#9CA3AF" style={styles.inputIcon} />
-                <TextInput
-                  style={[
-                    styles.input,
-                    { paddingLeft: 44 },
-                    errors.expiryDate && styles.inputError,
-                  ]}
-                  placeholder="YYYY-MM-DD"
-                  value={expiryDate}
-                  onChangeText={(t) => {
-                    setExpiryDate(t);
-                    setErrors({ ...errors, expiryDate: "" });
+                <Text
+                  style={{
+                    color: expiryDate ? "#111827" : "#9CA3AF",
+                    fontSize: 15,
                   }}
-                />
-              </View>
+                >
+                  {expiryDate || "Select expiry date"}
+                </Text>
+              </TouchableOpacity>
               {errors.expiryDate && (
                 <Text style={styles.errorText}>{errors.expiryDate}</Text>
               )}
@@ -345,6 +370,37 @@ export default function ReceiveLineItemScreen() {
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Cross-Platform Date Picker Implementation */}
+      {showDatePicker && Platform.OS === "ios" && (
+        <Modal transparent animationType="slide">
+          <View style={styles.iosPickerModal}>
+            <View style={styles.iosPickerContent}>
+              <View style={styles.iosPickerHeader}>
+                <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                  <Text style={styles.iosPickerDone}>Done</Text>
+                </TouchableOpacity>
+              </View>
+              <DateTimePicker
+                value={date}
+                mode="date"
+                display="spinner"
+                onChange={handleDateChange}
+                minimumDate={new Date()} // Prevents picking dates in the past
+              />
+            </View>
+          </View>
+        </Modal>
+      )}
+      {showDatePicker && Platform.OS === "android" && (
+        <DateTimePicker
+          value={date}
+          mode="date"
+          display="default"
+          onChange={handleDateChange}
+          minimumDate={new Date()}
+        />
+      )}
     </KeyboardAvoidingView>
   );
 }
@@ -421,11 +477,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
     backgroundColor: "#F9FAFB",
   },
+  dateInputWrapper: {
+    justifyContent: "center",
+    paddingLeft: 44,
+  },
   inputError: { borderColor: "#EF4444", backgroundColor: "#FEF2F2" },
   errorText: { color: "#EF4444", fontSize: 12, marginTop: 4 },
   helperText: { color: "#6B7280", fontSize: 12, marginTop: 4 },
 
-  inputIconWrapper: { position: "relative", justifyContent: "center" },
   inputIcon: { position: "absolute", left: 12, zIndex: 1 },
 
   textArea: {
@@ -457,4 +516,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   submitBtnText: { color: "white", fontSize: 16 },
+
+  // iOS Picker Styles
+  iosPickerModal: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  iosPickerContent: {
+    backgroundColor: "white",
+    paddingBottom: 20,
+  },
+  iosPickerHeader: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+    backgroundColor: "#F9FAFB",
+  },
+  iosPickerDone: {
+    color: "#2563EB",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
 });

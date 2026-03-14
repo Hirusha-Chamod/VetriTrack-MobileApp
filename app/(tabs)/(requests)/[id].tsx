@@ -9,11 +9,10 @@ import {
     CheckCircle,
     ChevronLeft,
     Clock,
-    Eye,
     FileText,
     Package,
     X,
-    XCircle,
+    XCircle
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
@@ -396,17 +395,6 @@ export default function RequestDetailScreen() {
           </Text>
           <Text style={styles.notesText}>{request.reason}</Text>
         </View>
-
-        {/* Linked PO Button (Staff can see this once approved) */}
-        {request.linkedPOId && (
-          <TouchableOpacity
-            style={styles.viewPoBtn}
-            onPress={() => console.log("Navigate to PO:", request.linkedPOId)}
-          >
-            <Eye size={20} color="white" style={{ marginRight: 8 }} />
-            <Text style={styles.viewPoBtnText}>View Purchase Order</Text>
-          </TouchableOpacity>
-        )}
       </ScrollView>
 
       {/* --- OWNER ACTIONS --- */}

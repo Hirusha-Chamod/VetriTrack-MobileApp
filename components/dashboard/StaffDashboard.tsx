@@ -1,6 +1,7 @@
 import { Colors, Fonts } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useInventoryStore } from "@/store/useInventoryStore";
 import { useTaskStore } from "@/store/useTaskStore";
 import { useRouter } from "expo-router";
 import {
@@ -33,24 +34,26 @@ export default function StaffDashboard() {
   const theme = Colors[colorScheme];
 
   const { user } = useAuthStore();
-  const { tasks, fetchMyTasks, isLoading } = useTaskStore(); // Added isLoading from store
-
+  const { tasks, fetchMyTasks, isLoading } = useTaskStore();
+  const { items: inventoryItems, fetchItems: fetchInventory } =
+    useInventoryStore();
   // Local state for pull-to-refresh
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchMyTasks();
+    fetchInventory();
   }, []);
 
-  // Refresh handler
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
       await fetchMyTasks();
+      await fetchInventory();
     } finally {
       setRefreshing(false);
     }
-  }, [fetchMyTasks]);
+  }, [fetchMyTasks, fetchInventory]);
 
   const myActiveTasks = tasks.filter(
     (t) => t.status !== "completed" && t.status !== "cancelled",
@@ -64,8 +67,13 @@ export default function StaffDashboard() {
   }).length;
 
   const topTasks = myActiveTasks.slice(0, 2);
+  const lowStockCount = inventoryItems.filter((item) => {
+    const current = item.currentStock || 0;
+    return (
+      current <= (item.minStockLevel || 0) && (item.minStockLevel || 0) > 0
+    );
+  }).length;
 
-  const lowStockCount = 5;
   const recommendationsCount = 4;
   const expiringSoonCount = 8;
 
@@ -79,6 +87,8 @@ export default function StaffDashboard() {
       router.push("/(tabs)/(tasks)/" as any);
     else if (destination === "my-requests")
       router.push("/(tabs)/(requests)/" as any);
+    else if (destination === "low-stock")
+      router.push("/(tabs)/(low-stock)/" as any); 
     else console.log("Navigate to:", destination);
   };
 

@@ -4,6 +4,7 @@ import {
     ApprovalRequest,
     CreateRequestPayload,
 } from "../services/approvalService";
+import { useAuthStore } from "./useAuthStore";
 
 interface ApprovalState {
   pendingRequests: ApprovalRequest[];
@@ -17,6 +18,8 @@ interface ApprovalState {
   updateRequestStatus: (
     id: string,
     status: "approved" | "rejected",
+    finalQuantity?: number,
+    finalSupplierId?: string,
   ) => Promise<void>;
 }
 
@@ -67,12 +70,29 @@ export const useApprovalStore = create<ApprovalState>((set, get) => ({
     }
   },
 
-  updateRequestStatus: async (id: string, status: "approved" | "rejected") => {
+  updateRequestStatus: async (
+    id: string,
+    status: "approved" | "rejected",
+    finalQuantity?: number,
+    finalSupplierId?: string,
+  ) => {
     set({ isLoading: true, error: null });
     try {
-      await approvalApi.updateStatus(id, status);
-      // Refresh the owner's pending list to remove the one they just processed
-      await get().fetchPendingRequests();
+      // 👇 Pass them into the API call!
+      await approvalApi.updateStatus(
+        id,
+        status,
+        finalQuantity,
+        finalSupplierId,
+      );
+
+      const { user } = useAuthStore.getState();
+      if (user?.role === "owner") {
+        await get().fetchPendingRequests();
+      } else {
+        await get().fetchMyRequests();
+      }
+      set({ isLoading: false });
     } catch (error: any) {
       set({
         error: error.message || `Failed to ${status} request`,
