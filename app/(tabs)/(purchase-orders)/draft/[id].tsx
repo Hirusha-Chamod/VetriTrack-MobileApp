@@ -1,6 +1,7 @@
 import { Colors, Fonts } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { usePurchaseOrderStore } from "@/store/usePurchaseOrderStore";
+import { useSupplierStore } from "@/store/useSupplierStore";
 import { useToastStore } from "@/store/useToastStore";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Building2, ChevronLeft, Package, Send, X } from "lucide-react-native";
@@ -28,6 +29,8 @@ export default function DraftPODetailScreen() {
 
   const { drafts, fetchDrafts, updatePoStatus, isLoading } =
     usePurchaseOrderStore();
+  const { suppliers } = useSupplierStore();
+
   const [quantities, setQuantities] = useState<Record<string, number>>({});
 
   // Fetch drafts if the store happens to be empty on reload
@@ -117,17 +120,26 @@ export default function DraftPODetailScreen() {
     try {
       await updatePoStatus(draftPO._id, "Sent");
       showToast("Purchase order sent successfully!", "success");
-      // Go back to the main Hub instead of just 'back' so they see it in Sent
       router.push("/(tabs)/(purchase-orders)/list" as any);
     } catch (error: any) {
       showToast(error.message || "Failed to send PO", "error");
     }
   };
 
-  const supplierName =
-    typeof draftPO.supplierId === "object"
-      ? (draftPO.supplierId as any).supplierName
-      : "Unknown Supplier";
+  let supplierName = "Unknown Supplier";
+  if (draftPO?.supplierId) {
+    if (
+      typeof draftPO.supplierId === "object" &&
+      "supplierName" in draftPO.supplierId
+    ) {
+      supplierName = (draftPO.supplierId as any).supplierName;
+    } else {
+      const foundSupplier = suppliers.find((s) => s._id === draftPO.supplierId);
+      if (foundSupplier) {
+        supplierName = foundSupplier.supplierName;
+      }
+    }
+  }
 
   return (
     <KeyboardAvoidingView

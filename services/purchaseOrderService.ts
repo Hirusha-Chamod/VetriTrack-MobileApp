@@ -3,7 +3,7 @@ import { InventoryItem } from "./inventoryService";
 import { Supplier } from "./supplierService";
 
 export interface POItem {
-  itemId: string | InventoryItem; // String when creating, Populated object when fetching
+  itemId: string | InventoryItem;
   quantityRequested: number;
   quantityReceived: number;
   unitPrice: number;
@@ -12,13 +12,15 @@ export interface POItem {
 export interface PurchaseOrder {
   _id: string;
   poNumber: string;
-  supplierId: string | Supplier; // String when creating, Populated object when fetching
+  supplierId: string | Supplier;
   items: POItem[];
   status: "Draft" | "Sent" | "Partial" | "Received" | "Cancelled";
   totalValue: number;
   notes?: string;
   createdAt: string;
   updatedAt: string;
+  sentAt?: string; // 👈 NEW: Track when it was sent
+  lastReminderSentAt?: string; // 👈 NEW: Track when the last reminder went out
 }
 
 export interface CreatePoPayload {
@@ -84,6 +86,14 @@ export const purchaseOrderApi = {
     const response = await api.patch<PurchaseOrder>(
       `/purchase-orders/${poId}/receive`,
       { itemId, quantity },
+    );
+    return response.data;
+  },
+
+ 
+  sendReminder: async (poId: string): Promise<PurchaseOrder> => {
+    const response = await api.post<PurchaseOrder>(
+      `/purchase-orders/${poId}/remind`,
     );
     return response.data;
   },

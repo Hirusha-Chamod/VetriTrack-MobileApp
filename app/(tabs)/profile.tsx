@@ -1,23 +1,23 @@
 import { Header } from "@/components/layout/Header";
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { authApi, UserProfile } from "@/services/authService";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useToastStore } from "@/store/useToastStore";
 import { useRouter } from "expo-router";
-import { Home, LogOut, Mail, User } from "lucide-react-native";
+import { Edit2, LogOut, Mail, User, X } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Modal,
-    Platform,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from "react-native";
 
 export default function ProfileScreen() {
@@ -26,7 +26,7 @@ export default function ProfileScreen() {
   const logout = useAuthStore((state) => state.logout);
   const showToast = useToastStore((state) => state.showToast);
 
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
 
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
@@ -34,17 +34,23 @@ export default function ProfileScreen() {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
+  // --- EDIT PROFILE STATE ---
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editPassword, setEditPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     fetchProfile();
   }, []);
 
   const fetchProfile = async () => {
     if (!user?.id) return;
-
     try {
       setLoading(true);
       const data = await authApi.getUserById(user.id);
       setProfileData(data);
+      setEditName(data.fullName || data.username); // Pre-fill name
     } catch (error: any) {
       showToast(error.message, "error");
     } finally {
@@ -60,6 +66,47 @@ export default function ProfileScreen() {
   const navigateToDashboard = () => {
     setShowDropdown(false);
     router.replace("/(tabs)");
+  };
+
+  // --- HANDLE SAVE UPDATES ---
+  const handleSaveProfile = async () => {
+    if (!user?.id) return;
+
+    try {
+      setIsSubmitting(true);
+      const updates: any = {};
+
+      if (editName.trim() && editName !== profileData?.fullName) {
+        updates.fullName = editName.trim();
+      }
+      if (editPassword.trim()) {
+        if (editPassword.length < 6) {
+          showToast("Password must be at least 6 characters", "error");
+          setIsSubmitting(false);
+          return;
+        }
+        updates.password = editPassword;
+      }
+
+      // If nothing changed, just close the modal
+      if (Object.keys(updates).length === 0) {
+        setShowEditModal(false);
+        setIsSubmitting(false);
+        return;
+      }
+
+      await authApi.updateUser(user.id, updates);
+      showToast("Profile updated successfully!", "success");
+
+      // Reset form and refresh data
+      setEditPassword("");
+      setShowEditModal(false);
+      await fetchProfile();
+    } catch (error: any) {
+      showToast(error.message || "Failed to update profile", "error");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -90,6 +137,18 @@ export default function ProfileScreen() {
           <>
             <View style={[styles.card, { backgroundColor: theme.card }]}>
               <View style={styles.profileCenter}>
+                {/* Edit Button in Top Right */}
+                <TouchableOpacity
+                  style={styles.editIconBtn}
+                  onPress={() => {
+                    setEditName(profileData?.fullName || user?.username || "");
+                    setEditPassword("");
+                    setShowEditModal(true);
+                  }}
+                >
+                  <Edit2 size={18} color={theme.primary} />
+                </TouchableOpacity>
+
                 <View
                   style={[
                     styles.avatarContainer,
@@ -243,71 +302,97 @@ export default function ProfileScreen() {
         )}
       </ScrollView>
 
-      <Modal visible={showDropdown} transparent animationType="fade">
-        <TouchableWithoutFeedback onPress={() => setShowDropdown(false)}>
-          <View style={styles.dropdownOverlay}>
+      {/* ─── EDIT PROFILE MODAL ─── */}
+      <Modal visible={showEditModal} transparent animationType="slide">
+        <View style={styles.dialogOverlay}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            style={{ width: "100%" }}
+          >
             <View
-              style={[
-                styles.dropdownContent,
-                { backgroundColor: theme.card, borderColor: theme.border },
-              ]}
+              style={[styles.dialogContent, { backgroundColor: theme.card }]}
             >
-              <TouchableOpacity
-                style={styles.dropdownItem}
-                onPress={navigateToDashboard}
-              >
-                <Home size={18} color={theme.textPrimary} />
+              <View style={styles.modalHeaderRow}>
                 <Text
                   style={[
-                    styles.dropdownText,
-                    { color: theme.textPrimary, fontFamily: Fonts?.sans },
+                    styles.dialogTitle,
+                    {
+                      color: theme.textPrimary,
+                      fontFamily: Fonts?.bold,
+                      marginBottom: 0,
+                    },
                   ]}
                 >
-                  Dashboard
+                  Edit Profile
                 </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.dropdownItem}
-                onPress={() => setShowDropdown(false)}
-              >
-                <User size={18} color={theme.textPrimary} />
-                <Text
-                  style={[
-                    styles.dropdownText,
-                    { color: theme.textPrimary, fontFamily: Fonts?.sans },
-                  ]}
+                <TouchableOpacity
+                  onPress={() => setShowEditModal(false)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  Profile
-                </Text>
-              </TouchableOpacity>
-              <View
-                style={[
-                  styles.dropdownSeparator,
-                  { backgroundColor: theme.border },
-                ]}
+                  <X size={24} color={theme.textSecondary} />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.inputLabel}>Full Name</Text>
+              <TextInput
+                style={styles.input}
+                value={editName}
+                onChangeText={setEditName}
+                placeholder="Enter your full name"
               />
-              <TouchableOpacity
-                style={styles.dropdownItem}
-                onPress={() => {
-                  setShowDropdown(false);
-                  setShowLogoutDialog(true);
-                }}
-              >
-                <LogOut size={18} color={theme.danger} />
-                <Text
+
+              <Text style={styles.inputLabel}>New Password (Optional)</Text>
+              <TextInput
+                style={styles.input}
+                value={editPassword}
+                onChangeText={setEditPassword}
+                placeholder="Leave blank to keep current"
+                secureTextEntry
+              />
+
+              <View style={[styles.dialogFooter, { marginTop: 16 }]}>
+                <TouchableOpacity
                   style={[
-                    styles.dropdownText,
-                    { color: theme.danger, fontFamily: Fonts?.sans },
+                    styles.dialogBtn,
+                    { borderColor: theme.border, borderWidth: 1 },
                   ]}
+                  onPress={() => setShowEditModal(false)}
+                  disabled={isSubmitting}
                 >
-                  Logout
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={[
+                      styles.dialogBtnText,
+                      { color: theme.textPrimary, fontFamily: Fonts?.sans },
+                    ]}
+                  >
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.dialogBtn, { backgroundColor: theme.primary }]}
+                  onPress={handleSaveProfile}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <ActivityIndicator color="white" size="small" />
+                  ) : (
+                    <Text
+                      style={[
+                        styles.dialogBtnText,
+                        { color: "white", fontFamily: Fonts?.bold },
+                      ]}
+                    >
+                      Save Changes
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        </TouchableWithoutFeedback>
+          </KeyboardAvoidingView>
+        </View>
       </Modal>
 
+      {/* ─── LOGOUT DIALOG ─── */}
       <Modal visible={showLogoutDialog} transparent animationType="fade">
         <View style={styles.dialogOverlay}>
           <View style={[styles.dialogContent, { backgroundColor: theme.card }]}>
@@ -327,7 +412,6 @@ export default function ProfileScreen() {
             >
               Are you sure you want to log out of VetriTrack?
             </Text>
-
             <View style={styles.dialogFooter}>
               <TouchableOpacity
                 style={[
@@ -368,22 +452,6 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  headerWrapper: { paddingBottom: 16 },
-  headerContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 16,
-  },
-  headerLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
-  iconButton: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-  },
-  headerTitle: { color: "white", fontSize: 20 },
-
   scrollContent: { padding: 16, paddingBottom: 40 },
   loadingContainer: {
     flex: 1,
@@ -400,9 +468,20 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+    position: "relative", // needed for absolute edit button
   },
 
-  profileCenter: { alignItems: "center", padding: 24 },
+  editIconBtn: {
+    position: "absolute",
+    top: 16,
+    right: 16,
+    padding: 8,
+    backgroundColor: "#EFF6FF",
+    borderRadius: 8,
+    zIndex: 10,
+  },
+
+  profileCenter: { alignItems: "center", padding: 24, paddingTop: 32 },
   avatarContainer: {
     width: 80,
     height: 80,
@@ -449,29 +528,7 @@ const styles = StyleSheet.create({
   },
   logoutButtonText: { color: "white", fontSize: 16 },
 
-  dropdownOverlay: { flex: 1, backgroundColor: "transparent" },
-  dropdownContent: {
-    position: "absolute",
-    top: Platform.OS === "ios" ? 100 : 70,
-    right: 16,
-    width: 200,
-    borderRadius: 8,
-    borderWidth: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  dropdownItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 12,
-    gap: 12,
-  },
-  dropdownText: { fontSize: 14 },
-  dropdownSeparator: { height: 1, width: "100%" },
-
+  // Dialog & Modal Styles
   dialogOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -480,6 +537,12 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   dialogContent: { width: "100%", borderRadius: 12, padding: 24 },
+  modalHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
   dialogTitle: { fontSize: 18, marginBottom: 8 },
   dialogDescription: { fontSize: 14, marginBottom: 24, lineHeight: 20 },
   dialogFooter: { flexDirection: "row", justifyContent: "flex-end", gap: 12 },
@@ -491,4 +554,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   dialogBtnText: { fontSize: 14 },
+
+  // Edit form styles
+  inputLabel: {
+    fontSize: 13,
+    color: "#4B5563",
+    marginBottom: 6,
+    marginTop: 12,
+    fontWeight: "600",
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    backgroundColor: "#F9FAFB",
+    borderRadius: 8,
+    height: 48,
+    paddingHorizontal: 16,
+    fontSize: 15,
+    color: "#111827",
+  },
 });

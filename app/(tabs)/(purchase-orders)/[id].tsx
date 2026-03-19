@@ -2,6 +2,7 @@ import { Colors, Fonts } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useInventoryStore } from "@/store/useInventoryStore";
 import { usePurchaseOrderStore } from "@/store/usePurchaseOrderStore";
+import { useToastStore } from "@/store/useToastStore";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
     AlertCircle,
@@ -9,9 +10,10 @@ import {
     ChevronLeft,
     Clock,
     Download,
+    Mail,
     Package,
 } from "lucide-react-native";
-import React from "react";
+import React, { useState } from "react";
 import {
     ActivityIndicator,
     SafeAreaView,
@@ -26,10 +28,12 @@ import {
 export default function PODetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = 'light';
   const theme = Colors[colorScheme];
   const { items: inventoryItems } = useInventoryStore();
-  const { purchaseOrders, isLoading } = usePurchaseOrderStore();
+  const showToast = useToastStore((state) => state.showToast);
+  const { purchaseOrders, isLoading, sendReminder } = usePurchaseOrderStore();
+  const [isReminding, setIsReminding] = useState(false);
 
   // Find the current PO from the store
   const po = purchaseOrders.find((p) => p._id === id);
@@ -144,6 +148,31 @@ export default function PODetailScreen() {
     typeof po.supplierId === "object"
       ? (po.supplierId as any).supplierName
       : "Unknown Supplier";
+
+  // Check if we can send a reminder
+  const canSendReminder = () => {
+    if (po.status !== "Sent" && po.status !== "Partial") return false;
+    if (!po.lastReminderSentAt) return true;
+
+    const hoursSinceLastReminder =
+      (new Date().getTime() - new Date(po.lastReminderSentAt).getTime()) /
+      (1000 * 60 * 60);
+    return hoursSinceLastReminder >= 24;
+  };
+
+  const isReminderLocked = !canSendReminder();
+
+  const handleSendReminder = async () => {
+    setIsReminding(true);
+    try {
+      await sendReminder(po._id);
+      showToast("Reminder email sent to supplier!", "success");
+    } catch (error: any) {
+      showToast(error.message || "Failed to send reminder", "error");
+    } finally {
+      setIsReminding(false);
+    }
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: "#F9FAFB" }]}>
@@ -440,17 +469,58 @@ export default function PODetailScreen() {
       </ScrollView>
 
       {/* Fixed Bottom Action */}
-      {po.status !== "Received" && po.status !== "Cancelled" && (
-        <View style={styles.bottomBar}>
-          <TouchableOpacity
-            style={styles.receiveBtn}
-            onPress={() => router.push("/(tabs)/(transactions)/receive")}
-          >
-            <Download size={20} color="white" style={{ marginRight: 8 }} />
-            <Text style={[styles.receiveBtnText, { fontFamily: Fonts?.bold }]}>
-              Receive Stock
-            </Text>
-          </TouchableOpacity>
+  
+      {(po.status === "Sent" || po.status === "Partial") && (
+        <View style={styles.bottomBarStacked}>
+          {/* 👇 SafeAreaView moved INSIDE the absolute View */}
+          <SafeAreaView>
+            <TouchableOpacity
+              style={[styles.receiveBtn, { marginBottom: 12 }]}
+              onPress={() => router.push("/(tabs)/(transactions)/receive")}
+            >
+              <Download size={20} color="white" style={{ marginRight: 8 }} />
+              <Text style={[styles.receiveBtnText, { fontFamily: Fonts?.bold }]}>
+                Receive Stock
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.outlineBtn,
+                isReminderLocked && {
+                  backgroundColor: "#F3F4F6",
+                  borderColor: "#E5E7EB",
+                },
+              ]}
+              onPress={handleSendReminder}
+              disabled={isReminderLocked || isReminding}
+            >
+              {isReminding ? (
+                <ActivityIndicator color="#2563EB" size="small" />
+              ) : (
+                <>
+                  <Mail
+                    size={18}
+                    color={isReminderLocked ? "#9CA3AF" : "#2563EB"}
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text
+                    style={[
+                      styles.outlineBtnText,
+                      {
+                        fontFamily: Fonts?.bold,
+                        color: isReminderLocked ? "#9CA3AF" : "#2563EB",
+                      },
+                    ]}
+                  >
+                    {isReminderLocked
+                      ? "Reminder Sent Today"
+                      : "Send Reminder Email"}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </SafeAreaView>
         </View>
       )}
     </View>
@@ -483,7 +553,7 @@ const styles = StyleSheet.create({
   },
   badgeText: { fontSize: 13 },
 
-  scrollContent: { padding: 16, paddingBottom: 100 },
+  scrollContent: { padding: 16, paddingBottom: 140 },
 
   card: {
     backgroundColor: "white",
@@ -554,7 +624,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F9FAFB",
     borderRadius: 8,
     padding: 12,
-    marginBottom: 12,
+    marginBottom: 20,
   },
   lineItemTop: {
     flexDirection: "row",
@@ -603,4 +673,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   receiveBtnText: { color: "white", fontSize: 16 },
+  bottomBarStacked: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "white",
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+    gap: 4,
+  },
+  outlineBtn: {
+    height: 52,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#2563EB",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "white",
+  },
+  outlineBtnText: {
+    fontSize: 16,
+  },
 });

@@ -26,7 +26,7 @@ import {
 
 export default function DraftPOsScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
+ const colorScheme = 'light';
   const theme = Colors[colorScheme];
 
   const { drafts, fetchDrafts, isLoading, error } = usePurchaseOrderStore();

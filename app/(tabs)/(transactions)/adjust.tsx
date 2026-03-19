@@ -3,7 +3,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useInventoryStore } from "@/store/useInventoryStore";
 import { useToastStore } from "@/store/useToastStore";
 import { useTransactionStore } from "@/store/useTransactionStore";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
     CheckCircle,
     ChevronLeft,
@@ -46,18 +46,28 @@ export default function StockAdjustmentScreen() {
   const theme = Colors[colorScheme];
   const showToast = useToastStore((state) => state.showToast);
 
+  const params = useLocalSearchParams();
+
   const { items, fetchItems } = useInventoryStore();
   const { processTransaction, isLoading } = useTransactionStore();
 
-  const [selectedItemId, setSelectedItemId] = useState<string>("");
-  const [adjustmentType, setAdjustmentType] = useState<"add" | "remove">(
-    "remove",
+  const [selectedItemId, setSelectedItemId] = useState<string>(
+    (params.prefillItemId as string) || "",
   );
-  const [quantity, setQuantity] = useState<string>("1");
-  const [reason, setReason] = useState<string>("count-correction");
-  const [notes, setNotes] = useState<string>("");
+  const [adjustmentType, setAdjustmentType] = useState<"add" | "remove">(
+    (params.prefillType as "add" | "remove") || "remove",
+  );
+  const [quantity, setQuantity] = useState<string>(
+    (params.prefillQty as string) || "1",
+  );
+  const [reason, setReason] = useState<string>(
+    (params.prefillReason as string) || "count-correction",
+  );
+  const [notes, setNotes] = useState<string>(
+    (params.prefillNotes as string) || "",
+  );
   const [searchQuery, setSearchQuery] = useState("");
-
+  
   useEffect(() => {
     if (items.length === 0) fetchItems();
   }, []);

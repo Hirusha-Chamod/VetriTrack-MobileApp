@@ -10,6 +10,7 @@ export interface Supplier {
   address: string;
   notes?: string;
   leadTimeNotes?: string;
+  averageLeadTimeDays?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -66,7 +67,7 @@ export const supplierApi = {
   },
 
 
-  uploadBulk: async (file: any): Promise<Supplier[]> => {
+ uploadBulk: async (file: any): Promise<Supplier[]> => {
     const formData = new FormData();
     formData.append("file", file as any);
 
@@ -76,5 +77,23 @@ export const supplierApi = {
       },
     });
     return response.data;
+  },
+
+ 
+  exportExcel: async (): Promise<string> => {
+    const response = await api.get("/suppliers/export/excel", {
+      responseType: "blob", 
+    });
+
+    // Convert the raw Blob into a Base64 string for Expo FileSystem
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64data = (reader.result as string).split(',')[1];
+        resolve(base64data);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(response.data);
+    });
   },
 };

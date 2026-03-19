@@ -1,10 +1,11 @@
-import { Colors, Fonts } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { authApi } from '@/services/authService';
-import { useAuthStore } from '@/store/useAuthStore';
-import { useToastStore } from '@/store/useToastStore';
-import { AlertCircle, Eye, EyeOff } from 'lucide-react-native';
-import React, { useState } from 'react';
+
+import { Colors, Fonts } from "@/constants/theme";
+import { useRouter } from "expo-router";
+import { authApi } from "@/services/authService";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useToastStore } from "@/store/useToastStore";
+import { AlertCircle, Eye, EyeOff } from "lucide-react-native";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -16,39 +17,39 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
+} from "react-native";
 
 export default function LoginScreen() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'staff' | 'owner'>('owner');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState<"staff" | "owner">("owner");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-
-  const colorScheme = useColorScheme() ?? 'light';
+  const [error, setError] = useState("");
+  const router = useRouter();
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
 
   const login = useAuthStore((state) => state.login);
   const showToast = useToastStore((state) => state.showToast);
 
-  const handleRoleChange = (selectedRole: 'staff' | 'owner') => {
+  const handleRoleChange = (selectedRole: "staff" | "owner") => {
     setRole(selectedRole);
-    if (selectedRole === 'owner') {
-      setUsername('');
-      setPassword('');
+    if (selectedRole === "owner") {
+      setUsername("");
+      setPassword("");
     } else {
-      setUsername('');
-      setPassword('');
+      setUsername("");
+      setPassword("");
     }
-    setError('');
+    setError("");
   };
 
   const handleLogin = async () => {
-    setError('');
+    setError("");
 
     if (!username.trim() || !password.trim()) {
-      setError('Invalid credentials. Please try again.');
+      setError("Invalid credentials. Please try again.");
       return;
     }
 
@@ -59,11 +60,11 @@ export default function LoginScreen() {
         username: data.user.username,
         role: data.user.role,
         token: data.accessToken,
-        id: data.user.id, 
+        id: data.user.id,
       });
-      showToast(`Welcome back, ${data.user.username}!`, 'success');
+      showToast(`Welcome back, ${data.user.username}!`, "success");
     } catch (err: any) {
-      setError('Invalid credentials. Please try again.');
+      setError("Invalid credentials. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -71,49 +72,90 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={[styles.container, { backgroundColor: theme.backgroundLightBlue }]}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.headerContainer}>
           <Image
-            source={require('@/assets/images/logo.png')}
+            source={require("@/assets/images/logo.png")}
             style={[styles.logo, { tintColor: theme.primary }]}
             resizeMode="contain"
           />
-          <Text style={[styles.mainTitle, { color: theme.primaryDark, fontFamily: Fonts?.bold }]}>
+          <Text
+            style={[
+              styles.mainTitle,
+              { color: theme.primaryDark, fontFamily: Fonts?.bold },
+            ]}
+          >
             VetriTrack
           </Text>
-          <Text style={[styles.mainSubtitle, { color: theme.primary, fontFamily: Fonts?.sans }]}>
+          <Text
+            style={[
+              styles.mainSubtitle,
+              { color: theme.primary, fontFamily: Fonts?.sans },
+            ]}
+          >
             Veterinary Inventory System
           </Text>
         </View>
 
         <View style={[styles.card, { backgroundColor: theme.card }]}>
-          <Text style={[styles.cardTitle, { color: theme.textPrimary, fontFamily: Fonts?.bold }]}>
+          <Text
+            style={[
+              styles.cardTitle,
+              { color: theme.textPrimary, fontFamily: Fonts?.bold },
+            ]}
+          >
             Welcome Back
           </Text>
-          <Text style={[styles.cardSubtitle, { color: theme.textSecondary, fontFamily: Fonts?.sans }]}>
+          <Text
+            style={[
+              styles.cardSubtitle,
+              { color: theme.textSecondary, fontFamily: Fonts?.sans },
+            ]}
+          >
             Sign in to manage your inventory
           </Text>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.textPrimary, fontFamily: Fonts?.sans }]}>Login As</Text>
-            <View style={[styles.toggleContainer, { backgroundColor: theme.backgroundLightBlue }]}>
+            <Text
+              style={[
+                styles.label,
+                { color: theme.textPrimary, fontFamily: Fonts?.sans },
+              ]}
+            >
+              Login As
+            </Text>
+            <View
+              style={[
+                styles.toggleContainer,
+                { backgroundColor: theme.backgroundLightBlue },
+              ]}
+            >
               <TouchableOpacity
                 style={[
                   styles.toggleTab,
-                  role === 'staff' && [styles.activeTab, { backgroundColor: theme.white }],
+                  role === "staff" && [
+                    styles.activeTab,
+                    { backgroundColor: theme.white },
+                  ],
                 ]}
-                onPress={() => handleRoleChange('staff')}
+                onPress={() => handleRoleChange("staff")}
               >
                 <Text
                   style={[
                     styles.toggleText,
-                    { 
-                      color: role === 'staff' ? theme.primary : 'rgba(37, 99, 235, 0.7)', 
+                    {
+                      color:
+                        role === "staff"
+                          ? theme.primary
+                          : "rgba(37, 99, 235, 0.7)",
                       fontFamily: Fonts?.sans,
-                      fontWeight: role === 'staff' ? '600' : '400'
+                      fontWeight: role === "staff" ? "600" : "400",
                     },
                   ]}
                 >
@@ -123,17 +165,23 @@ export default function LoginScreen() {
               <TouchableOpacity
                 style={[
                   styles.toggleTab,
-                  role === 'owner' && [styles.activeTab, { backgroundColor: theme.white }],
+                  role === "owner" && [
+                    styles.activeTab,
+                    { backgroundColor: theme.white },
+                  ],
                 ]}
-                onPress={() => handleRoleChange('owner')}
+                onPress={() => handleRoleChange("owner")}
               >
                 <Text
                   style={[
                     styles.toggleText,
-                    { 
-                      color: role === 'owner' ? theme.primary : 'rgba(37, 99, 235, 0.7)', 
+                    {
+                      color:
+                        role === "owner"
+                          ? theme.primary
+                          : "rgba(37, 99, 235, 0.7)",
                       fontFamily: Fonts?.sans,
-                      fontWeight: role === 'owner' ? '600' : '400'
+                      fontWeight: role === "owner" ? "600" : "400",
                     },
                   ]}
                 >
@@ -144,43 +192,67 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.textPrimary, fontFamily: Fonts?.sans }]}>Username</Text>
+            <Text
+              style={[
+                styles.label,
+                { color: theme.textPrimary, fontFamily: Fonts?.sans },
+              ]}
+            >
+              Username
+            </Text>
             <TextInput
               style={[
                 styles.input,
-                { backgroundColor: theme.white, borderColor: theme.inputBorder, color: theme.textPrimary, fontFamily: Fonts?.sans },
+                {
+                  backgroundColor: theme.white,
+                  borderColor: theme.inputBorder,
+                  color: theme.textPrimary,
+                  fontFamily: Fonts?.sans,
+                },
               ]}
               placeholder="Enter your username"
               placeholderTextColor={theme.inputPlaceholder}
               value={username}
               onChangeText={(text) => {
                 setUsername(text);
-                if (error) setError('');
+                if (error) setError("");
               }}
               autoCapitalize="none"
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.textPrimary, fontFamily: Fonts?.sans }]}>Password</Text>
+            <Text
+              style={[
+                styles.label,
+                { color: theme.textPrimary, fontFamily: Fonts?.sans },
+              ]}
+            >
+              Password
+            </Text>
             <View style={styles.passwordContainer}>
               <TextInput
                 style={[
                   styles.input,
                   styles.passwordInput,
-                  { backgroundColor: theme.white, borderColor: theme.inputBorder, color: theme.textPrimary, fontFamily: Fonts?.sans },
+                  {
+                    backgroundColor: theme.white,
+                    borderColor: theme.inputBorder,
+                    color: theme.textPrimary,
+                    fontFamily: Fonts?.sans,
+                  },
                 ]}
                 placeholder="Enter your password"
                 placeholderTextColor={theme.inputPlaceholder}
                 value={password}
                 onChangeText={(text) => {
                   setPassword(text);
-                  if (error) setError('');
+                  if (error) setError("");
                 }}
                 secureTextEntry={!showPassword}
               />
-              <TouchableOpacity 
-                style={styles.eyeIcon} 
+              <TouchableOpacity
+                style={styles.eyeIcon}
                 onPress={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? (
@@ -193,9 +265,19 @@ export default function LoginScreen() {
           </View>
 
           {error ? (
-            <View style={[styles.errorAlert, { backgroundColor: theme.dangerLight, borderColor: '#FECACA' }]}>
+            <View
+              style={[
+                styles.errorAlert,
+                { backgroundColor: theme.dangerLight, borderColor: "#FECACA" },
+              ]}
+            >
               <AlertCircle size={16} color={theme.danger} />
-              <Text style={[styles.errorAlertText, { color: '#991B1B', fontFamily: Fonts?.sans }]}>
+              <Text
+                style={[
+                  styles.errorAlertText,
+                  { color: "#991B1B", fontFamily: Fonts?.sans },
+                ]}
+              >
                 {error}
               </Text>
             </View>
@@ -209,18 +291,27 @@ export default function LoginScreen() {
             {loading ? (
               <ActivityIndicator color="white" />
             ) : (
-              <Text style={[styles.buttonText, { fontFamily: Fonts?.sans }]}>Sign In</Text>
+              <Text style={[styles.buttonText, { fontFamily: Fonts?.sans }]}>
+                Sign In
+              </Text>
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.forgotPasswordButton}>
-            <Text style={[styles.forgotPasswordText, { color: theme.primary, fontFamily: Fonts?.sans }]}>
+          <TouchableOpacity
+            style={styles.forgotPasswordButton}
+            onPress={() => router.push("/forgot-password")}
+          >
+            <Text
+              style={[
+                styles.forgotPasswordText,
+                { color: theme.primary, fontFamily: Fonts?.sans },
+              ]}
+            >
               Forgot Password?
             </Text>
           </TouchableOpacity>
 
           <View style={[styles.divider, { borderBottomColor: theme.border }]} />
-
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -233,11 +324,11 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     padding: 24,
   },
   headerContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 32,
   },
   logo: {
@@ -255,7 +346,7 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 8,
     padding: 24,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,
     shadowRadius: 15,
@@ -263,12 +354,12 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 24,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 4,
   },
   cardSubtitle: {
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 20,
   },
   inputGroup: {
@@ -279,7 +370,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   toggleContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     borderRadius: 8,
     padding: 4,
   },
@@ -287,12 +378,12 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 10,
     paddingHorizontal: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderRadius: 6,
   },
   activeTab: {
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
@@ -309,19 +400,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   passwordContainer: {
-    position: 'relative',
-    justifyContent: 'center',
+    position: "relative",
+    justifyContent: "center",
   },
   passwordInput: {
     paddingRight: 40,
   },
   eyeIcon: {
-    position: 'absolute',
+    position: "absolute",
     right: 12,
   },
   errorAlert: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 12,
     borderRadius: 6,
     borderWidth: 1,
@@ -334,17 +425,17 @@ const styles = StyleSheet.create({
   loginButton: {
     height: 44,
     borderRadius: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 16,
   },
   buttonText: {
-    color: 'white',
+    color: "white",
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   forgotPasswordButton: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 16,
   },
   forgotPasswordText: {
@@ -355,14 +446,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   footer: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   demoText: {
     fontSize: 12,
     marginBottom: 8,
   },
   demoCredentialsContainer: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   demoCredentials: {
     fontSize: 12,

@@ -34,7 +34,7 @@ import {
 export default function RequestReviewScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
+ const colorScheme = 'light';
   const theme = Colors[colorScheme];
   const showToast = useToastStore((state) => state.showToast);
 

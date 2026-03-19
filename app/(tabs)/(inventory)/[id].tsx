@@ -30,7 +30,7 @@ import {
 export default function ItemDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = 'light';
   const showToast = useToastStore((state) => state.showToast);
 
   const { items, updateItem, isLoading } = useInventoryStore();

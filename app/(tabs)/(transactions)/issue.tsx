@@ -49,7 +49,7 @@ export default function IssueStockScreen() {
   const [reason, setReason] = useState<string>("treatment");
   const [notes, setNotes] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
-
+console.log("Selected Item ID:", selectedItemId); // Debug log to check selected item ID
   useEffect(() => {
     if (items.length === 0) fetchItems();
   }, []);
@@ -79,8 +79,6 @@ export default function IssueStockScreen() {
         type: "ISSUE",
         quantity: qty,
         reason: fullReason,
-        // Notice we purposely omit batchId here!
-        // Your backend will catch this and apply the FEFO logic automatically.
       });
 
       showToast("Stock issued successfully via FEFO!", "success");

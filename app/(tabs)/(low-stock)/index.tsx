@@ -23,7 +23,7 @@ import {
 
 export default function LowStockScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
+ const colorScheme = 'light';
   const theme = Colors[colorScheme];
 
   const { items, fetchItems, isLoading } = useInventoryStore();

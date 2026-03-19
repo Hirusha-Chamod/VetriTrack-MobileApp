@@ -1,3 +1,4 @@
+import { Header } from "@/components/layout/Header";
 import { Colors, Fonts } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -41,7 +42,7 @@ export default function TasksListScreen() {
   const theme = Colors[colorScheme];
 
 
-  const { user } = useAuthStore();
+  const { user,logout} = useAuthStore();
   const isOwner = user?.role === "owner";
 
   const { tasks, fetchTasks, fetchMyTasks, isLoading } = useTaskStore();
@@ -125,82 +126,86 @@ export default function TasksListScreen() {
       item.status !== "cancelled";
 
     return (
-      <TouchableOpacity
-        style={styles.taskCard}
-        activeOpacity={0.7}
-        onPress={() => router.push(`/(tabs)/(tasks)/${item.id}` as any)}
-      >
-        <View style={styles.taskTop}>
-          <Text style={[styles.taskTitle, { fontFamily: Fonts?.bold }]}>
-            {item.title}
-          </Text>
-          <ChevronRight size={20} color="#9CA3AF" />
-        </View>
-
-        <View style={styles.badgeRow}>
-          <View style={[styles.badge, { backgroundColor: statusUI.bg }]}>
-            <Text style={[styles.badgeText, { color: statusUI.text }]}>
-              {statusUI.label}
+       <><Header
+        title="Analytics"
+        onBack={() => router.back()}
+        userRole={user?.role}
+        onLogout={logout}
+        onDashboard={() => router.push("/(tabs)/" as any)}
+        onProfile={() => router.push("/profile" as any)} /><TouchableOpacity
+          style={styles.taskCard}
+          activeOpacity={0.7}
+          onPress={() => router.push(`/(tabs)/(tasks)/${item.id}` as any)}
+        >
+          <View style={styles.taskTop}>
+            <Text style={[styles.taskTitle, { fontFamily: Fonts?.bold }]}>
+              {item.title}
             </Text>
+            <ChevronRight size={20} color="#9CA3AF" />
           </View>
-          {item.priority && (
-            <View
-              style={[
-                styles.badge,
-                {
-                  backgroundColor:
-                    item.priority === "high" ? "#FEE2E2" : "#FFEDD5",
-                },
-              ]}
-            >
-              <Text
+
+          <View style={styles.badgeRow}>
+            <View style={[styles.badge, { backgroundColor: statusUI.bg }]}>
+              <Text style={[styles.badgeText, { color: statusUI.text }]}>
+                {statusUI.label}
+              </Text>
+            </View>
+            {item.priority && (
+              <View
                 style={[
-                  styles.badgeText,
-                  { color: item.priority === "high" ? "#B91C1C" : "#C2410C" },
+                  styles.badge,
+                  {
+                    backgroundColor: item.priority === "high" ? "#FEE2E2" : "#FFEDD5",
+                  },
                 ]}
               >
-                {item.priority.charAt(0).toUpperCase() + item.priority.slice(1)}
-              </Text>
-            </View>
-          )}
-          {taskOverdue && (
-            <View
-              style={[
-                styles.badge,
-                {
-                  backgroundColor: "#FEE2E2",
-                  flexDirection: "row",
-                  alignItems: "center",
-                },
-              ]}
-            >
-              <AlertCircle
-                size={12}
-                color="#B91C1C"
-                style={{ marginRight: 4 }}
-              />
-              <Text style={[styles.badgeText, { color: "#B91C1C" }]}>
-                Overdue
-              </Text>
-            </View>
-          )}
-        </View>
-
-        <View style={styles.taskFooter}>
-          {isOwner && (
-            <View style={styles.footerItem}>
-              <UserIcon size={14} color="#6B7280" style={{ marginRight: 6 }} />
-              <Text style={styles.footerText}>{item.assignedToName}</Text>
-            </View>
-          )}
-          <View style={styles.footerItem}>
-            <Calendar size={14} color="#6B7280" style={{ marginRight: 6 }} />
-            <Text style={styles.footerText}>
-              {new Date(item.dueDate).toLocaleDateString("en-GB")}
-            </Text>
+                <Text
+                  style={[
+                    styles.badgeText,
+                    { color: item.priority === "high" ? "#B91C1C" : "#C2410C" },
+                  ]}
+                >
+                  {item.priority.charAt(0).toUpperCase() + item.priority.slice(1)}
+                </Text>
+              </View>
+            )}
+            {taskOverdue && (
+              <View
+                style={[
+                  styles.badge,
+                  {
+                    backgroundColor: "#FEE2E2",
+                    flexDirection: "row",
+                    alignItems: "center",
+                  },
+                ]}
+              >
+                <AlertCircle
+                  size={12}
+                  color="#B91C1C"
+                  style={{ marginRight: 4 }} />
+                <Text style={[styles.badgeText, { color: "#B91C1C" }]}>
+                  Overdue
+                </Text>
+              </View>
+            )}
           </View>
-        </View>
-      </TouchableOpacity>
+
+          <View style={styles.taskFooter}>
+            {isOwner && (
+              <View style={styles.footerItem}>
+                <UserIcon size={14} color="#6B7280" style={{ marginRight: 6 }} />
+                <Text style={styles.footerText}>{item.assignedToName}</Text>
+              </View>
+            )}
+            <View style={styles.footerItem}>
+              <Calendar size={14} color="#6B7280" style={{ marginRight: 6 }} />
+              <Text style={styles.footerText}>
+                {new Date(item.dueDate).toLocaleDateString("en-GB")}
+              </Text>
+            </View>
+          </View>
+        </TouchableOpacity></>
     );
   };
 

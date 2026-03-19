@@ -27,7 +27,7 @@ export default function AddInventoryItemScreen() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = 'light';
   const theme = Colors[colorScheme];
   const { createItem, isLoading } = useInventoryStore();
   const showToast = useToastStore((state) => state.showToast);
@@ -78,7 +78,20 @@ export default function AddInventoryItemScreen() {
         unitPrice: parseFloat(formData.unitPrice),
         notes: formData.notes,
       });
+
       showToast("Inventory item added successfully!", "success");
+
+      setFormData({
+        itemCode: "",
+        itemName: "",
+        category: "",
+        unitOfMeasure: "",
+        minStockLevel: "",
+        unitPrice: "",
+        notes: "",
+      });
+      setErrors({});
+
       router.back();
     } catch (error: any) {
       showToast(error.message || "Failed to create item", "error");

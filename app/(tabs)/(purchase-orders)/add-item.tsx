@@ -25,7 +25,7 @@ type Step = "select-supplier" | "select-item" | "enter-quantity";
 
 export default function AddItemToDraftPOScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
+ const colorScheme = 'light';
   const theme = Colors[colorScheme];
   const showToast = useToastStore((state) => state.showToast);
 
@@ -51,6 +51,22 @@ export default function AddItemToDraftPOScreen() {
       setSearchQuery("");
     }, []),
   );
+
+  const getNumericLeadTime = (notes?: string) => {
+    if (!notes) return 999;
+    const match = notes.match(/(\d+)/);
+    return match ? parseInt(match[1], 10) : 999;
+  };
+
+  const lowestLeadTimeSupplier = React.useMemo(() => {
+    if (suppliers.length === 0) return null;
+    return suppliers.reduce((lowest, current) =>
+      getNumericLeadTime(current.leadTimeNotes) <
+      getNumericLeadTime(lowest.leadTimeNotes)
+        ? current
+        : lowest,
+    );
+  }, [suppliers]);
 
   useEffect(() => {
     // Ensure we have the latest data
@@ -235,30 +251,85 @@ export default function AddItemToDraftPOScreen() {
               keyExtractor={(item) => item._id}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ paddingBottom: 40 }}
-              renderItem={({ item, index }) => (
-                <TouchableOpacity
-                  style={styles.card}
-                  activeOpacity={0.7}
-                  onPress={() => handleSupplierSelect(item._id)}
-                >
-                  <View style={styles.iconBg}>
-                    <Building2 size={24} color="#9333EA" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={[styles.cardTitle, { fontFamily: Fonts?.bold }]}
-                    >
-                      {item.supplierName}
-                    </Text>
-                    {item.leadTimeNotes && (
-                      <Text style={styles.cardSub}>
-                        Lead time: {item.leadTimeNotes}
-                      </Text>
-                    )}
-                  </View>
-                  <ChevronRight size={20} color="#9CA3AF" />
-                </TouchableOpacity>
-              )}
+              renderItem={({ item, index }) => {
+                const isRecommended =
+                  lowestLeadTimeSupplier &&
+                  item._id === lowestLeadTimeSupplier._id;
+
+                return (
+                  <TouchableOpacity
+                    style={[
+                      styles.card,
+                      selectedSupplierId === item._id && {
+                        borderColor: "#9333EA",
+                        borderWidth: 2,
+                      },
+                    ]}
+                    activeOpacity={0.7}
+                    onPress={() => handleSupplierSelect(item._id)}
+                  >
+                    <View style={styles.iconBg}>
+                      <Building2 size={24} color="#9333EA" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          marginBottom: 4,
+                        }}
+                      >
+                        <Text
+                          style={[
+                            styles.cardTitle,
+                            {
+                              fontFamily: Fonts?.bold,
+                              marginBottom: 0,
+                              marginRight: 8,
+                            },
+                          ]}
+                        >
+                          {item.supplierName}
+                        </Text>
+
+                        {/* 👇 Show the badge! */}
+                        {isRecommended && (
+                          <View
+                            style={{
+                              backgroundColor: "#9333EA",
+                              paddingHorizontal: 6,
+                              paddingVertical: 2,
+                              borderRadius: 4,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color: "white",
+                                fontSize: 10,
+                                fontWeight: "bold",
+                              }}
+                            >
+                              Recommended
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+
+                      {item.leadTimeNotes && (
+                        <Text style={styles.cardSub}>
+                          Lead time:{" "}
+                          <Text
+                            style={{ fontWeight: "bold", color: "#111827" }}
+                          >
+                            {item.leadTimeNotes}
+                          </Text>
+                        </Text>
+                      )}
+                    </View>
+                    <ChevronRight size={20} color="#9CA3AF" />
+                  </TouchableOpacity>
+                );
+              }}
             />
           </>
         )}

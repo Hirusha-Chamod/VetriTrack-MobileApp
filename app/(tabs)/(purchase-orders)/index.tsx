@@ -14,7 +14,7 @@ import {
 
 export default function OrdersHubScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
+ const colorScheme = 'light';
   const theme = Colors[colorScheme];
 
   const hubCards = [

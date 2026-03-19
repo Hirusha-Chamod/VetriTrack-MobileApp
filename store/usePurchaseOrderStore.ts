@@ -22,6 +22,7 @@ interface PurchaseOrderState {
     itemId: string,
     quantity: number,
   ) => Promise<void>;
+  sendReminder: (poId: string) => Promise<boolean>; // 👈 NEW: Added to interface
   clearError: () => void;
 }
 
@@ -31,7 +32,6 @@ export const usePurchaseOrderStore = create<PurchaseOrderState>((set, get) => ({
   isLoading: false,
   error: null,
 
-  // Fetches main PO list (Sent, Partial, Received)
   fetchPurchaseOrders: async (status?: string) => {
     set({ isLoading: true, error: null });
     try {
@@ -46,7 +46,6 @@ export const usePurchaseOrderStore = create<PurchaseOrderState>((set, get) => ({
     }
   },
 
-  // Fetches specifically the Drafts
   fetchDrafts: async () => {
     set({ isLoading: true, error: null });
     try {
@@ -68,7 +67,7 @@ export const usePurchaseOrderStore = create<PurchaseOrderState>((set, get) => ({
         drafts: [newDraft, ...state.drafts],
         isLoading: false,
       }));
-      return newDraft; // Return so the UI can navigate to the new draft's detail page
+      return newDraft;
     } catch (error: any) {
       set({
         error: error.response?.data?.message || "Failed to create Draft PO",
@@ -83,7 +82,6 @@ export const usePurchaseOrderStore = create<PurchaseOrderState>((set, get) => ({
     try {
       const updatedDraft = await purchaseOrderApi.addItemToDraft(poId, data);
 
-      // Update the specific draft in our drafts array
       set((state) => ({
         drafts: state.drafts.map((draft) =>
           draft._id === poId ? updatedDraft : draft,
@@ -104,13 +102,12 @@ export const usePurchaseOrderStore = create<PurchaseOrderState>((set, get) => ({
     try {
       const updatedPo = await purchaseOrderApi.updateStatus(poId, status);
 
-      // Update both lists just in case a Draft was marked as 'Sent'
       set((state) => ({
-        drafts: state.drafts.filter((draft) => draft._id !== poId), // Remove from drafts if sent
+        drafts: state.drafts.filter((draft) => draft._id !== poId),
         purchaseOrders: [
           updatedPo,
           ...state.purchaseOrders.filter((po) => po._id !== poId),
-        ], // Add/Update in main list
+        ],
         isLoading: false,
       }));
     } catch (error: any) {
@@ -140,6 +137,29 @@ export const usePurchaseOrderStore = create<PurchaseOrderState>((set, get) => ({
     } catch (error: any) {
       set({
         error: error.response?.data?.message || "Failed to receive items",
+        isLoading: false,
+      });
+      throw error;
+    }
+  },
+
+
+  sendReminder: async (poId: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const updatedPo = await purchaseOrderApi.sendReminder(poId);
+
+      set((state) => ({
+        purchaseOrders: state.purchaseOrders.map((po) =>
+          po._id === poId ? updatedPo : po,
+        ),
+        isLoading: false,
+      }));
+
+      return true;
+    } catch (error: any) {
+      set({
+        error: error.response?.data?.message || "Failed to send reminder",
         isLoading: false,
       });
       throw error;

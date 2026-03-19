@@ -66,6 +66,25 @@ export interface ExpiryReportItem {
   daysUntilExpiry?: number;
 }
 
+export interface ForecastRecommendation {
+  itemCode: string;
+  itemName: string;
+  category: string;
+  unitOfMeasure: string;
+  unitPrice: number;
+  predictedDailyDemand: number;
+  predicted7DayDemand: number;
+  totalCurrentStock: number;
+  minStockLevel: number;
+  demandDuringLead: number;
+  recommendedOrderQty: number;
+  needsReorder: boolean;
+  urgency: "HIGH" | "MEDIUM" | "LOW";
+  nearestExpiryBatch: string | null;
+  nearestExpiryDate: string | null;
+  isExpiringSoon: boolean;
+}
+
 export interface ExpiryReport {
   expiringSoon: ExpiryReportItem[];
   expired: ExpiryReportItem[];
@@ -82,8 +101,10 @@ export const inventoryApi = {
     return response.data;
   },
 
-  getAllItems: async (): Promise<InventoryItem[]> => {
-    const response = await api.get<InventoryItem[]>("/inventory/items");
+  getAllItems: async (filters?: any): Promise<InventoryItem[]> => {
+    const response = await api.get<InventoryItem[]>("/inventory/items", {
+      params: filters,
+    });
     return response.data;
   },
 
@@ -122,8 +143,49 @@ export const inventoryApi = {
     return response.data;
   },
 
-  updateItem: async (itemId: string, updates: Partial<InventoryItem>): Promise<InventoryItem> => {
-    const response = await api.patch<InventoryItem>(`/inventory/item/${itemId}`, updates);
+  updateItem: async (
+    itemId: string,
+    updates: Partial<InventoryItem>,
+  ): Promise<InventoryItem> => {
+    const response = await api.patch<InventoryItem>(
+      `/inventory/item/${itemId}`,
+      updates,
+    );
     return response.data;
+  },
+
+  getRecommendations: async (): Promise<ForecastRecommendation[]> => {
+    const response = await api.get<ForecastRecommendation[]>(
+      "/forecast/recommendations",
+    );
+    return response.data;
+  },
+
+  uploadBulk: async (file: any): Promise<any> => {
+    const formData = new FormData();
+    formData.append("file", file as any);
+
+    const response = await api.post("/inventory/upload", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  },
+
+  exportExcel: async (): Promise<string> => {
+    const response = await api.get("/inventory/export/excel", {
+      responseType: "blob", 
+    });
+
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64data = (reader.result as string).split(',')[1];
+        resolve(base64data);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(response.data);
+    });
   },
 };

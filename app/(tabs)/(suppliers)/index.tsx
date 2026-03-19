@@ -3,28 +3,37 @@ import { Colors, Fonts } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useSupplierStore } from "@/store/useSupplierStore";
+import { useToastStore } from "@/store/useToastStore";
+import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system/legacy";
 import { useRouter } from "expo-router";
+import * as Sharing from "expo-sharing";
 import {
-    Building2,
-    Check,
-    Clock,
-    Mail,
-    Plus,
-    Search,
-    X,
+  Building2,
+  Check,
+  Clock,
+  Download,
+  Mail,
+  MoreVertical,
+  Plus,
+  Search,
+  Upload,
+  X,
 } from "lucide-react-native";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    RefreshControl,
-    SafeAreaView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  Modal,
+  RefreshControl,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 
 export default function SuppliersScreen() {
@@ -32,18 +41,27 @@ export default function SuppliersScreen() {
   const colorScheme = useColorScheme() ?? "light";
   const theme = Colors[colorScheme];
 
-  const { suppliers, fetchSuppliers, isLoading, error } = useSupplierStore();
-  const { user, logout } = useAuthStore();
-  const [searchQuery, setSearchQuery] = useState("");
+  const {
+    suppliers,
+    fetchSuppliers,
+    uploadSuppliers,
+    exportSuppliers,
+    isLoading,
+    error,
+  } = useSupplierStore();
 
-  // Fetch data on mount
+  const { user, logout } = useAuthStore();
+  const showToast = useToastStore((state) => state.showToast);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isProcessingFile, setIsProcessingFile] = useState(false);
+
   useEffect(() => {
     fetchSuppliers();
   }, []);
 
-  // Filter and sort logic (matching Figma)
   const displaySuppliers = useMemo(() => {
-    // 1. Filter by search query (matching name or contact person)
     const filtered = suppliers.filter(
       (sup) =>
         sup.supplierName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -54,6 +72,77 @@ export default function SuppliersScreen() {
       a.supplierName.localeCompare(b.supplierName),
     );
   }, [suppliers, searchQuery]);
+
+  // ─── IMPORT LOGIC ─────────────────────────────────────────────────────────
+  const handleImport = () => {
+    setIsMenuOpen(false); // Close the menu
+
+    // Wait 300ms for the menu to fully disappear before opening the iOS picker
+    setTimeout(async () => {
+      try {
+        const result = await DocumentPicker.getDocumentAsync({
+          type: [
+            "text/csv",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/vnd.ms-excel",
+          ],
+          copyToCacheDirectory: true,
+        });
+
+        if (result.canceled) return;
+
+        setIsProcessingFile(true);
+        const file = result.assets[0];
+
+        const fileToUpload = {
+          uri: file.uri,
+          name: file.name,
+          type: file.mimeType || "application/octet-stream",
+        };
+
+        await uploadSuppliers(fileToUpload);
+        showToast("Suppliers imported successfully!", "success");
+      } catch (err: any) {
+        showToast(err.message || "Failed to import suppliers", "error");
+      } finally {
+        setIsProcessingFile(false);
+      }
+    }, 300);
+  };
+
+  // ─── EXPORT LOGIC ─────────────────────────────────────────────────────────
+  const handleExport = () => {
+    setIsMenuOpen(false); // Close the menu
+
+    // Wait 300ms for export as well, since Sharing opens a system modal!
+    setTimeout(async () => {
+      setIsProcessingFile(true);
+      try {
+        const base64Data = await exportSuppliers();
+        const filename = `VetriTrack_Suppliers_${new Date().toISOString().split("T")[0]}.xlsx`;
+        const fileUri = FileSystem.documentDirectory + filename;
+
+        await FileSystem.writeAsStringAsync(fileUri, base64Data, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+
+        const canShare = await Sharing.isAvailableAsync();
+        if (canShare) {
+          await Sharing.shareAsync(fileUri, {
+            mimeType:
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            dialogTitle: "Save Suppliers Export",
+          });
+        } else {
+          showToast("Sharing is not available on this device", "error");
+        }
+      } catch (err: any) {
+        showToast(err.message || "Failed to export suppliers", "error");
+      } finally {
+        setIsProcessingFile(false);
+      }
+    }, 300);
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: "#F9FAFB" }]}>
@@ -70,6 +159,15 @@ export default function SuppliersScreen() {
         onDashboard={() => router.push("/(tabs)/")}
         onProfile={() => router.push("/profile" as any)}
       />
+
+      {/* Processing Overlay */}
+      {isProcessingFile && (
+        <View style={styles.processingOverlay}>
+          <ActivityIndicator size="large" color="#0891B2" />
+          <Text style={styles.processingText}>Processing file...</Text>
+        </View>
+      )}
+
       {/* Header - Cyan 600 */}
       <View style={[styles.headerWrapper, { backgroundColor: "#0891B2" }]}>
         <SafeAreaView>
@@ -88,25 +186,72 @@ export default function SuppliersScreen() {
               </View>
             </View>
 
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={() =>
-                router.push("/(tabs)/(suppliers)/add-supplier" as any)
-              }
-            >
-              <Plus size={16} color="#0891B2" />
-              <Text
-                style={[
-                  styles.addButtonText,
-                  { fontFamily: Fonts?.bold, color: "#0891B2" },
-                ]}
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={() =>
+                  router.push("/(tabs)/(suppliers)/add-supplier" as any)
+                }
               >
-                Add
-              </Text>
-            </TouchableOpacity>
+                <Plus size={16} color="#0891B2" />
+                <Text
+                  style={[
+                    styles.addButtonText,
+                    { fontFamily: Fonts?.bold, color: "#0891B2" },
+                  ]}
+                >
+                  Add
+                </Text>
+              </TouchableOpacity>
+
+              {/* Three Dot Menu Button */}
+              {user?.role === "owner" && (
+                <TouchableOpacity
+                  style={styles.menuButton}
+                  onPress={() => setIsMenuOpen(true)}
+                >
+                  <MoreVertical size={20} color="white" />
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         </SafeAreaView>
       </View>
+
+      {/* Options Dropdown Modal */}
+      <Modal visible={isMenuOpen} transparent animationType="fade">
+        <TouchableWithoutFeedback onPress={() => setIsMenuOpen(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.dropdownMenu}>
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={handleImport}
+                >
+                  <Upload size={18} color="#4B5563" />
+                  <Text
+                    style={[styles.menuItemText, { fontFamily: Fonts?.sans }]}
+                  >
+                    Import CSV / Excel
+                  </Text>
+                </TouchableOpacity>
+                <View style={styles.menuDivider} />
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={handleExport}
+                >
+                  <Download size={18} color="#4B5563" />
+                  <Text
+                    style={[styles.menuItemText, { fontFamily: Fonts?.sans }]}
+                  >
+                    Export to Excel
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
 
       <View style={styles.contentPad}>
         {/* Search Bar */}
@@ -149,7 +294,7 @@ export default function SuppliersScreen() {
             contentContainerStyle={styles.listContent}
             refreshControl={
               <RefreshControl
-                refreshing={isLoading}
+                refreshing={isLoading && !isProcessingFile}
                 onRefresh={fetchSuppliers}
                 tintColor="#0891B2"
               />
@@ -238,7 +383,7 @@ export default function SuppliersScreen() {
                     <Text
                       style={[styles.leadTimeText, { fontFamily: Fonts?.sans }]}
                     >
-                      Avg lead time: {item.leadTimeNotes || "N/A"}
+                      Avg lead time: {item.averageLeadTimeDays || "N/A"} days
                     </Text>
                   </View>
                 </View>
@@ -268,6 +413,7 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.9)",
     marginTop: 2,
   },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 12 },
   addButton: {
     backgroundColor: "white",
     flexDirection: "row",
@@ -277,6 +423,60 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   addButtonText: { fontSize: 14, marginLeft: 4 },
+  menuButton: {
+    padding: 4,
+  },
+
+  // Modal / Dropdown Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.1)",
+  },
+  dropdownMenu: {
+    position: "absolute",
+    top: 110, // Adjust based on your header height
+    right: 20,
+    backgroundColor: "white",
+    borderRadius: 8,
+    padding: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+    minWidth: 180,
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    gap: 12,
+  },
+  menuItemText: { fontSize: 15, color: "#374151" },
+  menuDivider: {
+    height: 1,
+    backgroundColor: "#F3F4F6",
+    marginVertical: 4,
+  },
+
+  processingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(255,255,255,0.8)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 999,
+  },
+  processingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: "#0891B2",
+    fontWeight: "600",
+  },
 
   contentPad: { flex: 1, padding: 16 },
 

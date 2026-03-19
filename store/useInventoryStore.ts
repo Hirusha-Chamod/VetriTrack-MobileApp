@@ -1,9 +1,10 @@
 import {
-    CreateItemPayload,
-    ExpiryReport,
-    inventoryApi,
-    InventoryItem,
-    LowStockAlert,
+  CreateItemPayload,
+  ExpiryReport,
+  ForecastRecommendation,
+  inventoryApi,
+  InventoryItem,
+  LowStockAlert,
 } from "@/services/inventoryService";
 import { create } from "zustand";
 
@@ -13,9 +14,10 @@ interface InventoryState {
   expiryReport: ExpiryReport | null;
   isLoading: boolean;
   error: string | null;
-
-  fetchItems: () => Promise<void>;
+  recommendations: ForecastRecommendation[];
+  fetchItems: (filters?: any) => Promise<void>;
   fetchLowStockAlerts: () => Promise<void>;
+  fetchRecommendations: () => Promise<void>;
   fetchExpiryReport: () => Promise<void>;
   createItem: (data: CreateItemPayload) => Promise<void>;
   updateItem: (
@@ -23,6 +25,8 @@ interface InventoryState {
     updates: Partial<InventoryItem>,
   ) => Promise<void>;
   updateReorderLevel: (itemId: string, minLevel: number) => Promise<void>;
+  uploadInventory: (file: any) => Promise<void>;
+  exportInventory: () => Promise<string>;
   clearError: () => void;
 }
 
@@ -30,13 +34,14 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   items: [],
   lowStockAlerts: [],
   expiryReport: null,
+  recommendations: [],
   isLoading: false,
   error: null,
 
-  fetchItems: async () => {
+  fetchItems: async (filters?: any) => {
     set({ isLoading: true, error: null });
     try {
-      const items = await inventoryApi.getAllItems();
+      const items = await inventoryApi.getAllItems(filters);
       set({ items, isLoading: false });
     } catch (error: any) {
       set({
@@ -67,6 +72,19 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
     } catch (error: any) {
       set({
         error: error.message || "Failed to fetch expiry report",
+        isLoading: false,
+      });
+    }
+  },
+
+  fetchRecommendations: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const recommendations = await inventoryApi.getRecommendations();
+      set({ recommendations, isLoading: false });
+    } catch (error: any) {
+      set({
+        error: error.message || "Failed to fetch smart recommendations",
         isLoading: false,
       });
     }
@@ -119,6 +137,41 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
     } catch (error: any) {
       set({
         error: error.message || "Failed to update reorder level",
+        isLoading: false,
+      });
+      throw error;
+    }
+  },
+
+  uploadInventory: async (file: any) => {
+    set({ isLoading: true, error: null });
+    try {
+      await inventoryApi.uploadBulk(file);
+      await get().fetchItems(); // Refresh the list after successful upload
+    } catch (error: any) {
+      set({
+        error:
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to upload inventory file",
+        isLoading: false,
+      });
+      throw error;
+    }
+  },
+
+  exportInventory: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const base64Data = await inventoryApi.exportExcel();
+      set({ isLoading: false });
+      return base64Data;
+    } catch (error: any) {
+      set({
+        error:
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to export inventory",
         isLoading: false,
       });
       throw error;

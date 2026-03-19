@@ -1,34 +1,35 @@
 import { Colors, Fonts } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { inventoryApi } from "@/services/inventoryService";
 import { useApprovalStore } from "@/store/useApprovalStore";
 import { useInventoryStore } from "@/store/useInventoryStore";
 import { useTaskStore } from "@/store/useTaskStore";
 import { useRouter } from "expo-router";
 import {
-    AlertTriangle,
-    ArrowUpDown,
-    BarChart3,
-    Building2,
-    Calendar,
-    CheckCircle,
-    ClipboardList,
-    Clock,
-    FileText,
-    Lightbulb,
-    Package,
-    Settings,
-    UserCircle2,
-    Users,
+  AlertTriangle,
+  ArrowUpDown,
+  BarChart3,
+  Building2,
+  Calendar,
+  CheckCircle,
+  ClipboardList,
+  Clock,
+  FileText,
+  Lightbulb,
+  Package,
+  Settings,
+  UserCircle2,
+  Users,
 } from "lucide-react-native";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function OwnerDashboard({ username }: { username: string }) {
@@ -38,14 +39,25 @@ export default function OwnerDashboard({ username }: { username: string }) {
 
   const { tasks, fetchTasks } = useTaskStore();
   const { pendingRequests, fetchPendingRequests } = useApprovalStore();
-
-  const { items: inventoryItems, fetchItems: fetchInventory } =
-    useInventoryStore();
+  const [expiringSoonCount, setExpiringSoonCount] = useState(0);
+  const {
+    items: inventoryItems,
+    fetchItems: fetchInventory,
+    recommendations,
+    fetchRecommendations,
+  } = useInventoryStore();
 
   useEffect(() => {
     fetchTasks();
     fetchPendingRequests();
-    fetchInventory(); 
+    fetchInventory();
+    fetchRecommendations();
+    inventoryApi
+      .getExpiryReport()
+      .then((data) => {
+        setExpiringSoonCount(data.expiringSoon.length);
+      })
+      .catch(console.error);
   }, []);
 
   const pendingRequestsCount = pendingRequests.length;
@@ -62,7 +74,6 @@ export default function OwnerDashboard({ username }: { username: string }) {
     return due < today;
   }).length;
 
-
   const lowStockCount = inventoryItems.filter((item) => {
     const current = item.currentStock || 0;
     return (
@@ -70,11 +81,9 @@ export default function OwnerDashboard({ username }: { username: string }) {
     );
   }).length;
 
-  // Placeholder metrics for now
-  const recommendationsCount = 4;
-  const expiringSoonCount = 8;
+  const recommendationsCount = recommendations?.length || 0;
 
-  const handleNavigate = (destination: string) => {
+ const handleNavigate = (destination: string) => {
     if (destination === "inventory") {
       router.push("/(tabs)/(inventory)/" as any);
     } else if (destination === "transactions-hub") {
@@ -90,13 +99,20 @@ export default function OwnerDashboard({ username }: { username: string }) {
     } else if (destination === "approval-center") {
       router.push("/(tabs)/(approvals)/" as any);
     } else if (destination === "low-stock") {
-      // 👇 NEW: Explicitly route to our new low-stock folder
       router.push("/(tabs)/(low-stock)/" as any);
+    } else if (
+      destination === "expiry-management" ||
+      destination === "expiry-management-expiring"
+    ) {
+      router.push("/(tabs)/(expiry)/" as any);
+    } else if (destination === "recommendations") {
+      router.push("/(tabs)/(recommendations)" as any);
+    } else if (destination === "analytics") {
+      router.push("/(tabs)/(analytics)/" as any);
     } else {
       router.push(`/(tabs)/${destination}` as any);
     }
   };
-
   const kpis = [
     {
       label: "Low Stock",
@@ -153,13 +169,14 @@ export default function OwnerDashboard({ username }: { username: string }) {
       iconColor: theme.orange600,
       destination: "low-stock",
     },
-    {
+   {
       title: "Smart Recommendations",
       description: "AI-powered suggestions",
       icon: Lightbulb,
       bg: "#FEFCE8",
       iconColor: "#CA8A04",
       destination: "recommendations",
+      badge: recommendationsCount > 0 ? recommendationsCount : undefined, // 👇 Added badge here too!
     },
     {
       title: "Expiry Management",

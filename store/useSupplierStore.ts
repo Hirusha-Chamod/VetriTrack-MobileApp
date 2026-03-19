@@ -20,6 +20,7 @@ interface SupplierState {
   ) => Promise<void>;
   deleteSupplier: (id: string) => Promise<void>;
   uploadSuppliers: (file: any) => Promise<void>;
+  exportSuppliers: () => Promise<string>;
   clearError: () => void;
 }
 
@@ -143,6 +144,24 @@ export const useSupplierStore = create<SupplierState>((set, get) => ({
           error.response?.data?.message ||
           error.message ||
           "Failed to upload file",
+        isLoading: false,
+      });
+      throw error;
+    }
+  },
+
+  exportSuppliers: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const base64Data = await supplierApi.exportExcel();
+      set({ isLoading: false });
+      return base64Data; // Return the string to the UI to save it
+    } catch (error: any) {
+      set({
+        error:
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to export suppliers",
         isLoading: false,
       });
       throw error;

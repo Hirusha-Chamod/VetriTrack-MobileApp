@@ -1,5 +1,6 @@
 import { Colors, Fonts } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { inventoryApi } from "@/services/inventoryService";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useInventoryStore } from "@/store/useInventoryStore";
 import { useTaskStore } from "@/store/useTaskStore";
@@ -39,10 +40,21 @@ export default function StaffDashboard() {
     useInventoryStore();
   // Local state for pull-to-refresh
   const [refreshing, setRefreshing] = useState(false);
+  const [expiringSoonCount, setExpiringSoonCount] = useState(0); // 👈 NEW: State for real count
+
+  const fetchExpiryCount = async () => {
+    try {
+      const data = await inventoryApi.getExpiryReport();
+      setExpiringSoonCount(data.expiringSoon.length);
+    } catch (error) {
+      console.error("Failed to fetch expiry count:", error);
+    }
+  };
 
   useEffect(() => {
     fetchMyTasks();
     fetchInventory();
+    fetchExpiryCount();
   }, []);
 
   const onRefresh = useCallback(async () => {
@@ -50,6 +62,7 @@ export default function StaffDashboard() {
     try {
       await fetchMyTasks();
       await fetchInventory();
+      await fetchExpiryCount();
     } finally {
       setRefreshing(false);
     }
@@ -75,7 +88,6 @@ export default function StaffDashboard() {
   }).length;
 
   const recommendationsCount = 4;
-  const expiringSoonCount = 8;
 
   const handleNavigate = (destination: string) => {
     if (destination === "profile") router.push("/profile" as any);
@@ -88,7 +100,9 @@ export default function StaffDashboard() {
     else if (destination === "my-requests")
       router.push("/(tabs)/(requests)/" as any);
     else if (destination === "low-stock")
-      router.push("/(tabs)/(low-stock)/" as any); 
+      router.push("/(tabs)/(low-stock)/" as any);
+    else if (destination === "expiry-management")
+      router.push("/(tabs)/(expiry)/" as any);
     else console.log("Navigate to:", destination);
   };
 

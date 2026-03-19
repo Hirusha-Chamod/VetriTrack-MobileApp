@@ -29,7 +29,7 @@ export interface CreateUserPayload {
   role: "staff" | "owner";
 }
 
-// Data needed to update an existing user (matches your UpdateUserDto)
+
 export interface UpdateUserPayload {
   fullName?: string;
   email?: string;
@@ -38,7 +38,7 @@ export interface UpdateUserPayload {
 }
 
 export const authApi = {
-  // --- EXISTING LOGIN METHODS ---
+
   login: async (username: string, password: string): Promise<LoginResponse> => {
     const response = await api.post<LoginResponse>("/auth/login", {
       username,
@@ -52,7 +52,6 @@ export const authApi = {
     return response.data;
   },
 
-  // --- NEW USER MANAGEMENT METHODS ---
   getAllUsers: async (): Promise<UserProfile[]> => {
     const response = await api.get<UserProfile[]>("/auth/users");
     return response.data;
@@ -75,6 +74,30 @@ export const authApi = {
     const response = await api.patch<{ message: string }>(
       `/auth/users/${id}/deactivate`,
     );
+    return response.data;
+  },
+
+  forgotPassword: async (email: string): Promise<{ message: string }> => {
+    const response = await api.post<{ message: string }>("/auth/forgot-password", {
+      email,
+    });
+    return response.data;
+  },
+
+  verifyOtp: async (email: string, otp: string): Promise<{ isValid: boolean; message: string }> => {
+    const response = await api.post<{ isValid: boolean; message: string }>("/auth/verify-otp", {
+      email,
+      otp,
+    });
+    return response.data;
+  },
+
+  resetPassword: async (email: string, otp: string, newPassword: string): Promise<{ message: string }> => {
+    const response = await api.post<{ message: string }>("/auth/reset-password", {
+      email,
+      otp,
+      newPassword,
+    });
     return response.data;
   },
 };
