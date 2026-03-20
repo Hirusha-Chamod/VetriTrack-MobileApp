@@ -27,12 +27,10 @@ export default function SmartRecommendationsScreen() {
   const { recommendations, isLoading, fetchRecommendations } =
     useInventoryStore();
 
-  // Fetch recommendations when the screen loads
   useEffect(() => {
     fetchRecommendations();
   }, []);
-  console.log("Recommendations:", recommendations); // Debug log to check data structure
-  // Helper to style the urgency badge
+
   const getBadgeStyle = (urgency: "HIGH" | "MEDIUM" | "LOW") => {
     switch (urgency) {
       case "HIGH":
@@ -137,6 +135,7 @@ export default function SmartRecommendationsScreen() {
                 key={item.itemCode || index}
                 style={styles.card}
                 activeOpacity={0.7}
+                onPress={() => router.push(`/(tabs)/(recommendations)/${item.itemCode}` as any)}
               >
                 <View style={styles.cardTop}>
                   <Text style={[styles.itemName, { fontFamily: Fonts?.bold }]}>

@@ -1,11 +1,10 @@
 import { Header } from "@/components/layout/Header";
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useInventoryStore } from "@/store/useInventoryStore";
-import { useToastStore } from "@/store/useToastStore"; // Assuming you have this!
+import { useToastStore } from "@/store/useToastStore";
 import * as DocumentPicker from "expo-document-picker";
-import * as FileSystem from "expo-file-system/legacy"; // Using your working legacy import!
+import * as FileSystem from "expo-file-system/legacy";
 import { useRouter } from "expo-router";
 import * as Sharing from "expo-sharing";
 import {
@@ -61,7 +60,7 @@ export default function InventoryScreen() {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const showToast = useToastStore((state) => state.showToast);
- const colorScheme = 'light';
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
 
   const { items, fetchItems, uploadInventory, exportInventory, isLoading } =
@@ -248,7 +247,7 @@ export default function InventoryScreen() {
           <View style={styles.headerContent}>
             <View style={styles.headerTitleGroup}>
               <Package size={32} color="white" />
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={[styles.headerTitle, { fontFamily: Fonts?.bold }]}>
                   Inventory Overview
                 </Text>
@@ -662,13 +661,31 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 16,
   },
-  headerTitleGroup: { flexDirection: "row", alignItems: "center", gap: 12 },
-  headerTitle: { fontSize: 20, color: "white" },
-  headerSubtitle: { fontSize: 13, color: "rgba(255,255,255,0.8)" },
+  headerTitleGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1, // 👈 Crucial: Tells the left side to fill space but respect boundaries
+    paddingRight: 12,
+  },
+  headerTitle: {
+    fontSize: 20,
+    color: "white",
+  },
+  headerSubtitle: {
+    fontSize: 13,
+    color: "rgba(255,255,255,0.8)",
+    marginTop: 2,
+  },
 
-  headerActions: { flexDirection: "row", alignItems: "center", gap: 12 },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flexShrink: 0,
+  },
   addButton: {
     backgroundColor: "#0891B2",
     flexDirection: "row",
@@ -688,7 +705,7 @@ const styles = StyleSheet.create({
   },
   dropdownMenu: {
     position: "absolute",
-    top: 110, // Adjust this if it overlaps your header differently
+    top: 145,
     right: 20,
     backgroundColor: "white",
     borderRadius: 8,

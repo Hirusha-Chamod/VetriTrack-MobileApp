@@ -54,6 +54,7 @@ export interface LowStockAlert {
 }
 
 export interface ExpiryReportItem {
+  _id: string;
   itemCode: string;
   product: string;
   batchId: string;

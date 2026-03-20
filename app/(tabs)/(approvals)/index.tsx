@@ -1,29 +1,30 @@
+import { Header } from "@/components/layout/Header";
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useApprovalStore } from "@/store/useApprovalStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import { format } from "date-fns";
 import { useRouter } from "expo-router";
 import {
-    AlertCircle,
-    AlertTriangle,
-    CheckCircle,
-    ChevronRight,
-    Clock,
-    FileText,
-    Lightbulb,
+  AlertCircle,
+  AlertTriangle,
+  CheckCircle,
+  ChevronRight,
+  Clock,
+  FileText,
+  Lightbulb,
 } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    RefreshControl,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 type TabFilter = "pending" | "all";
@@ -31,20 +32,19 @@ type SourceFilter = "all" | "recommendation" | "low-stock" | "manual";
 
 export default function ApprovalCenterScreen() {
   const router = useRouter();
-  const colorScheme = 'light';
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
 
   const { pendingRequests, fetchPendingRequests, isLoading } =
     useApprovalStore();
+  const { user, logout } = useAuthStore();
 
   const [activeTab, setActiveTab] = useState<TabFilter>("pending");
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
 
   useEffect(() => {
     fetchPendingRequests();
-    // Note: If you want the "All" tab to show historical approved/rejected requests,
-    // you will need to add a `fetchAllRequests` endpoint to your backend/store!
-    // For now, we use pendingRequests for testing.
+
   }, []);
 
   const filterBySource = (reqs: any[]) => {
@@ -154,7 +154,16 @@ export default function ApprovalCenterScreen() {
         translucent={false}
       />
 
-      {/* Header - Green 600 */}
+      <Header
+        title="Approvals"
+        onBack={() => router.back()}
+        userRole={user?.role}
+        onLogout={logout}
+        onDashboard={() => router.push("/(tabs)/" as any)}
+        onProfile={() => router.push("/profile" as any)}
+      />
+
+      {/* Hero Banner - Green 600 */}
       <View style={[styles.headerWrapper, { backgroundColor: "#16A34A" }]}>
         <SafeAreaView>
           <View style={styles.headerContent}>
@@ -330,7 +339,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 10, // Adjusted padding to sit nicely under the global Header
   },
   headerTitleGroup: { flexDirection: "row", alignItems: "center" },
   headerTitle: { fontSize: 20, color: "white", marginBottom: 2 },

@@ -1,6 +1,5 @@
 import { useToastStore } from '@/store/useToastStore';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 
@@ -45,20 +44,17 @@ export const Toast = () => {
       case 'success':
         return {
           icon: 'checkmark-circle',
-          colors: ['#4CAF50', '#2E7D32'],
-          iconColor: '#FFFFFF',
+          bgColor: '#16A34A', // Professional solid green
         };
       case 'error':
         return {
           icon: 'alert-circle',
-          colors: ['#FF5252', '#D32F2F'],
-          iconColor: '#FFFFFF',
+          bgColor: '#DC2626', // Professional solid red
         };
       default:
         return {
           icon: 'information-circle',
-          colors: ['#2196F3', '#1565C0'],
-          iconColor: '#FFFFFF',
+          bgColor: '#1E3A8A', // Professional solid dark blue
         };
     }
   };
@@ -75,20 +71,15 @@ export const Toast = () => {
         },
       ]}
     >
-      <LinearGradient
-        colors={config.colors}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.toastContent}
-      >
+      <View style={[styles.toastContent, { backgroundColor: config.bgColor }]}>
         <View style={styles.iconContainer}>
-          <Ionicons name={config.icon as any} size={24} color={config.iconColor} />
+          <Ionicons name={config.icon as any} size={22} color="#FFFFFF" />
         </View>
         <Text style={styles.text}>{message}</Text>
         <View style={styles.closeButton}>
           <Ionicons name="close" size={18} color="rgba(255,255,255,0.7)" />
         </View>
-      </LinearGradient>
+      </View>
     </Animated.View>
   );
 };
@@ -105,43 +96,29 @@ const styles = StyleSheet.create({
   toastContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 100,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8, // Professional, subtle rounding instead of full pill
     width: '100%',
-    // Premium shadow
+    // Clean, modern drop shadow
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 10,
-    // Subtle inner glow
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
   },
   iconContainer: {
     marginRight: 12,
-    // Glow effect
-    shadowColor: '#FFF',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
   },
   text: {
     color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '500',
     flex: 1,
-    letterSpacing: 0.3,
     lineHeight: 20,
-    // Text shadow for depth
-    textShadowColor: 'rgba(0, 0, 0, 0.2)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
   },
   closeButton: {
     padding: 4,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.15)',
+    marginLeft: 8,
   },
 });

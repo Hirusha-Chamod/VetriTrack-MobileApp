@@ -2,6 +2,7 @@ import { Colors, Fonts } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { inventoryApi } from "@/services/inventoryService";
 import { useApprovalStore } from "@/store/useApprovalStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import { useInventoryStore } from "@/store/useInventoryStore";
 import { useTaskStore } from "@/store/useTaskStore";
 import { useRouter } from "expo-router";
@@ -47,18 +48,26 @@ export default function OwnerDashboard({ username }: { username: string }) {
     fetchRecommendations,
   } = useInventoryStore();
 
+ const { user } = useAuthStore();
+
   useEffect(() => {
+
+    if (!user?.token) {
+      return; 
+    }
     fetchTasks();
     fetchPendingRequests();
     fetchInventory();
     fetchRecommendations();
+    
     inventoryApi
       .getExpiryReport()
       .then((data) => {
         setExpiringSoonCount(data.expiringSoon.length);
       })
-      .catch(console.error);
-  }, []);
+      .catch((err) => console.log("Failed to fetch expiry count:", err.message));
+      
+  }, [user?.token]);
 
   const pendingRequestsCount = pendingRequests.length;
 
@@ -83,7 +92,7 @@ export default function OwnerDashboard({ username }: { username: string }) {
 
   const recommendationsCount = recommendations?.length || 0;
 
- const handleNavigate = (destination: string) => {
+  const handleNavigate = (destination: string) => {
     if (destination === "inventory") {
       router.push("/(tabs)/(inventory)/" as any);
     } else if (destination === "transactions-hub") {
@@ -109,6 +118,8 @@ export default function OwnerDashboard({ username }: { username: string }) {
       router.push("/(tabs)/(recommendations)" as any);
     } else if (destination === "analytics") {
       router.push("/(tabs)/(analytics)/" as any);
+    } else if (destination === "reorder-settings") {
+      router.push("/(tabs)/(settings)/" as any);
     } else {
       router.push(`/(tabs)/${destination}` as any);
     }
@@ -169,7 +180,7 @@ export default function OwnerDashboard({ username }: { username: string }) {
       iconColor: theme.orange600,
       destination: "low-stock",
     },
-   {
+    {
       title: "Smart Recommendations",
       description: "AI-powered suggestions",
       icon: Lightbulb,

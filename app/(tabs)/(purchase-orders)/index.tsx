@@ -1,21 +1,23 @@
+import { Header } from "@/components/layout/Header";
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAuthStore } from "@/store/useAuthStore";
 import { useRouter } from "expo-router";
 import { ChevronRight, FileText, Package } from "lucide-react-native";
 import React from "react";
 import {
-    SafeAreaView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function OrdersHubScreen() {
   const router = useRouter();
- const colorScheme = 'light';
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
+  const { user, logout } = useAuthStore();
 
   const hubCards = [
     {
@@ -43,7 +45,14 @@ export default function OrdersHubScreen() {
         backgroundColor="#9333EA"
         translucent={false}
       />
-
+      <Header
+        title="Orders"
+        onBack={() => router.back()}
+        userRole={user?.role}
+        onLogout={logout}
+        onDashboard={() => router.push("/(tabs)/" as any)}
+        onProfile={() => router.push("/profile" as any)}
+      />
       {/* Header - Purple 600 */}
       <View style={[styles.headerWrapper, { backgroundColor: "#9333EA" }]}>
         <SafeAreaView>

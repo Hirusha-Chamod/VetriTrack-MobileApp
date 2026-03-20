@@ -121,16 +121,17 @@ export default function BatchDetailScreen() {
   const HeaderIcon = themeColors.icon;
 
   const handlePrimaryAction = () => {
-    // Navigate to Adjust screen and pass all the context as URL parameters!
+    // Navigate to Adjust screen and pass all the context as URL parameters
     router.push({
       pathname: "/(tabs)/(transactions)/adjust",
       params: {
-        prefillItemId: matchedItem?._id, // Pass the actual database ID of the item
-        prefillQty: batchData.quantity.toString(), // Pass the exact quantity remaining in the batch
-        prefillType: "remove", // We are removing expired stock
-        prefillReason: isExpired ? "expired-disposed" : "other", // Automatically select the reason
+        prefillItemId: matchedItem?._id, 
+        prefillBatchId: batchData._id, 
+        prefillQty: batchData.quantity.toString(), 
+        prefillType: "remove", 
+        prefillReason: isExpired ? "expired-disposed" : "other", 
         prefillNotes: notes
-          ? `[Batch: ${batchData.batchId}] ${notes}`
+          ? `[Batch: ${batchData.batchId}] ${notes}` // Keep .batchId here for human readable notes!
           : `[Batch: ${batchData.batchId}]`,
       },
     });

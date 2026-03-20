@@ -5,30 +5,30 @@ import { useToastStore } from "@/store/useToastStore";
 import { useTransactionStore } from "@/store/useTransactionStore";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    CheckCircle,
-    ChevronLeft,
-    ChevronRight,
-    Edit3,
-    FileText,
-    Minus,
-    Package,
-    Plus,
-    Search,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Edit3,
+  FileText,
+  Minus,
+  Package,
+  Plus,
+  Search,
 } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    KeyboardAvoidingView,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const ADJUSTMENT_REASONS = [
@@ -67,7 +67,10 @@ export default function StockAdjustmentScreen() {
     (params.prefillNotes as string) || "",
   );
   const [searchQuery, setSearchQuery] = useState("");
-  
+  const [targetBatchId, setTargetBatchId] = useState<string | undefined>(
+    (params.prefillBatchId as string) || undefined,
+  );
+
   useEffect(() => {
     if (items.length === 0) fetchItems();
   }, []);
@@ -87,8 +90,19 @@ export default function StockAdjustmentScreen() {
       return;
     }
 
+    // Prevent Negative Stock on Remove
+    if (adjustmentType === "remove") {
+      const currentStock = selectedItem?.currentStock || 0;
+      if (qty > currentStock) {
+        showToast(
+          `Cannot remove ${qty}. Only ${currentStock} in stock.`,
+          "error",
+        );
+        return;
+      }
+    }
+
     try {
-      // Backend expects negative quantity for removals during ADJUSTMENT
       const finalQuantity =
         adjustmentType === "remove" ? -Math.abs(qty) : Math.abs(qty);
 
@@ -98,15 +112,34 @@ export default function StockAdjustmentScreen() {
 
       await processTransaction({
         itemId: selectedItemId,
+        batchId: targetBatchId, // This might be undefined, but backend Auto-Pilot will handle it!
         type: "ADJUSTMENT",
         quantity: finalQuantity,
         reason: fullReason,
       });
 
       showToast("Stock adjusted successfully!", "success");
+
+      // 👇 CLEAR ALL STATE BEFORE LEAVING 👇
+      setSelectedItemId("");
+      setTargetBatchId(undefined);
+      setSearchQuery("");
+      setQuantity("1");
+      setAdjustmentType("remove");
+      setReason("count-correction");
+      setNotes("");
+
+      // Go back to the hub
       router.back();
     } catch (error: any) {
-      showToast(error.message || "Failed to adjust stock", "error");
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to adjust stock";
+      const finalMessage = Array.isArray(errorMessage)
+        ? errorMessage[0]
+        : errorMessage;
+      showToast(finalMessage, "error");
     }
   };
 
@@ -221,7 +254,10 @@ export default function StockAdjustmentScreen() {
                   </Text>
                 </View>
                 <TouchableOpacity
-                  onPress={() => setSelectedItemId("")}
+                  onPress={() => {
+                    setSelectedItemId("");
+                    setTargetBatchId(undefined);
+                  }}
                   style={styles.changeBtn}
                 >
                   <Text style={styles.changeBtnText}>Change</Text>

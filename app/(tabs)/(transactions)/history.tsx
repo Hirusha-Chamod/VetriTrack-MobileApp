@@ -3,23 +3,23 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useTransactionStore } from "@/store/useTransactionStore";
 import { useRouter } from "expo-router";
 import {
-    ArrowDownRight,
-    ArrowUpRight,
-    ChevronLeft,
-    Edit3,
-    History,
+  ArrowDownRight,
+  ArrowUpRight,
+  ChevronLeft,
+  Edit3,
+  History,
 } from "lucide-react-native";
 import React, { useEffect } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    RefreshControl,
-    SafeAreaView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function TransactionHistoryScreen() {
@@ -83,7 +83,13 @@ export default function TransactionHistoryScreen() {
     }
 
     return (
-      <View style={styles.card}>
+      <TouchableOpacity
+        style={styles.card}
+        activeOpacity={0.7}
+        onPress={() =>
+          router.push(`/(tabs)/(transactions)/(history)/${item._id}` as any)
+        }
+      >
         <View style={[styles.iconBox, { backgroundColor: ui.bg }]}>
           <Icon size={20} color={ui.color} />
         </View>
@@ -113,7 +119,7 @@ export default function TransactionHistoryScreen() {
             {displayQty}
           </Text>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 

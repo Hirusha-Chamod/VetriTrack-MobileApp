@@ -5,27 +5,27 @@ import { useToastStore } from "@/store/useToastStore";
 import { useTransactionStore } from "@/store/useTransactionStore";
 import { useRouter } from "expo-router";
 import {
-    ChevronLeft,
-    ChevronRight,
-    Info,
-    Package,
-    Search,
-    Upload
+  ChevronLeft,
+  ChevronRight,
+  Info,
+  Package,
+  Search,
+  Upload,
 } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    KeyboardAvoidingView,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const ISSUE_REASONS = [
@@ -49,7 +49,7 @@ export default function IssueStockScreen() {
   const [reason, setReason] = useState<string>("treatment");
   const [notes, setNotes] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
-console.log("Selected Item ID:", selectedItemId); // Debug log to check selected item ID
+  console.log("Selected Item ID:", selectedItemId); // Debug log to check selected item ID
   useEffect(() => {
     if (items.length === 0) fetchItems();
   }, []);
@@ -84,8 +84,18 @@ console.log("Selected Item ID:", selectedItemId); // Debug log to check selected
       showToast("Stock issued successfully via FEFO!", "success");
       router.back();
     } catch (error: any) {
-      // If the backend throws 'Insufficient stock', it will be caught here!
-      showToast(error.message || "Failed to issue stock", "error");
+      // Safely extract the error message from Axios/NestJS
+      const errorMessage =
+        error?.response?.data?.message || // NestJS built-in error message
+        error?.message || // Standard JS Error message
+        "Failed to issue stock. Please try again.";
+
+      // Sometimes NestJS sends an array of messages for validation errors
+      const finalMessage = Array.isArray(errorMessage)
+        ? errorMessage[0]
+        : errorMessage;
+
+      showToast(finalMessage, "error");
     }
   };
 

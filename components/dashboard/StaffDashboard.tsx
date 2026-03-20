@@ -6,27 +6,27 @@ import { useInventoryStore } from "@/store/useInventoryStore";
 import { useTaskStore } from "@/store/useTaskStore";
 import { useRouter } from "expo-router";
 import {
-    AlertTriangle,
-    ArrowUpDown,
-    Calendar,
-    ChevronRight,
-    ClipboardList,
-    Clock,
-    FileText,
-    Lightbulb,
-    Package,
-    UserCircle2,
+  AlertTriangle,
+  ArrowUpDown,
+  Calendar,
+  ChevronRight,
+  ClipboardList,
+  Clock,
+  FileText,
+  Lightbulb,
+  Package,
+  UserCircle2,
 } from "lucide-react-native";
 import React, { useCallback, useEffect, useState } from "react"; // Added useState & useCallback
 import {
-    RefreshControl,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function StaffDashboard() {
@@ -52,10 +52,14 @@ export default function StaffDashboard() {
   };
 
   useEffect(() => {
+    if (!user?.token) {
+      return;
+    }
+
     fetchMyTasks();
     fetchInventory();
     fetchExpiryCount();
-  }, []);
+  }, [user?.token]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -103,6 +107,8 @@ export default function StaffDashboard() {
       router.push("/(tabs)/(low-stock)/" as any);
     else if (destination === "expiry-management")
       router.push("/(tabs)/(expiry)/" as any);
+    else if (destination === "recommendations")
+      router.push("/(tabs)/(recommendations)" as any);
     else console.log("Navigate to:", destination);
   };
 
