@@ -1,29 +1,29 @@
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { TaskPriority, TaskType } from "@/services/taskService";
 import { useTaskStore } from "@/store/useTaskStore";
 import { useToastStore } from "@/store/useToastStore";
 import { useUserStore } from "@/store/useUserStore";
+import { safeGoBack } from "@/utils/navigation";
 import { useRouter } from "expo-router";
 import {
-    Calendar,
-    ChevronLeft,
-    Plus,
-    User as UserIcon,
+  Calendar,
+  ChevronLeft,
+  Plus,
+  User as UserIcon,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-    ActivityIndicator,
-    KeyboardAvoidingView,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 // 👇 NEW: Import the DatePicker
@@ -31,7 +31,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 
 export default function CreateTaskScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
   const showToast = useToastStore((state) => state.showToast);
 
@@ -91,7 +91,7 @@ export default function CreateTaskScreen() {
       });
 
       showToast("Task assigned successfully!", "success");
-      router.back();
+      safeGoBack(router, "/(tabs)/(tasks)");
     } catch (error: any) {
       showToast(error.message || "Failed to assign task", "error");
     }
@@ -113,7 +113,7 @@ export default function CreateTaskScreen() {
         <SafeAreaView>
           <View style={styles.headerContent}>
             <TouchableOpacity
-              onPress={() => router.back()}
+              onPress={() => safeGoBack(router, "/(tabs)/(tasks)")}
               style={styles.backBtn}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >

@@ -1,5 +1,4 @@
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useApprovalStore } from "@/store/useApprovalStore";
 import { useInventoryStore } from "@/store/useInventoryStore";
 import { useToastStore } from "@/store/useToastStore";
@@ -7,23 +6,23 @@ import { useRouter } from "expo-router";
 import { ChevronLeft, Minus, Package, Plus, Search } from "lucide-react-native";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    KeyboardAvoidingView,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function CreateRequestScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
   const showToast = useToastStore((state) => state.showToast);
 

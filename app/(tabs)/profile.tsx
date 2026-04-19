@@ -3,11 +3,24 @@ import { Colors, Fonts } from "@/constants/theme";
 import { authApi, UserProfile } from "@/services/authService";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useToastStore } from "@/store/useToastStore";
+import { uploadToCloudinary } from "@/utils/cloudinary"; // Make sure path is correct!
+import { safeGoBack } from "@/utils/navigation";
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { Edit2, LogOut, Mail, User, X } from "lucide-react-native";
+import {
+  Camera,
+  Edit2,
+  Eye,
+  EyeOff,
+  LogOut,
+  Mail,
+  User,
+  X,
+} from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -17,13 +30,14 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 
 export default function ProfileScreen() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
+  const updateAvatarStore = useAuthStore((state) => state.updateAvatar);
   const showToast = useToastStore((state) => state.showToast);
 
   const colorScheme = "light";
@@ -32,12 +46,14 @@ export default function ProfileScreen() {
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // --- EDIT PROFILE STATE ---
   const [showEditModal, setShowEditModal] = useState(false);
   const [editName, setEditName] = useState("");
   const [editPassword, setEditPassword] = useState("");
+  const [editAvatarUrl, setEditAvatarUrl] = useState("");
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -50,7 +66,6 @@ export default function ProfileScreen() {
       setLoading(true);
       const data = await authApi.getUserById(user.id);
       setProfileData(data);
-      setEditName(data.fullName || data.username); // Pre-fill name
     } catch (error: any) {
       showToast(error.message, "error");
     } finally {
@@ -63,9 +78,29 @@ export default function ProfileScreen() {
     logout();
   };
 
-  const navigateToDashboard = () => {
-    setShowDropdown(false);
-    router.replace("/(tabs)");
+  // --- HANDLE AVATAR PICKER ---
+  const handlePickAvatar = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+
+      if (!result.canceled && result.assets[0].uri) {
+        setIsUploadingAvatar(true);
+        // Upload directly to Cloudinary
+        const cloudUrl = await uploadToCloudinary(result.assets[0].uri);
+        setEditAvatarUrl(cloudUrl); // Update local modal state
+        showToast("Image uploaded successfully!", "success");
+      }
+    } catch (error: any) {
+      showToast("Failed to upload image", "error");
+      console.error(error);
+    } finally {
+      setIsUploadingAvatar(false);
+    }
   };
 
   // --- HANDLE SAVE UPDATES ---
@@ -87,6 +122,9 @@ export default function ProfileScreen() {
         }
         updates.password = editPassword;
       }
+      if (editAvatarUrl !== profileData?.avatarUrl) {
+        updates.avatarUrl = editAvatarUrl;
+      }
 
       // If nothing changed, just close the modal
       if (Object.keys(updates).length === 0) {
@@ -97,6 +135,11 @@ export default function ProfileScreen() {
 
       await authApi.updateUser(user.id, updates);
       showToast("Profile updated successfully!", "success");
+
+      // Update Zustand store so UI updates instantly across the app without reloading
+      if (updates.avatarUrl) {
+        updateAvatarStore(updates.avatarUrl);
+      }
 
       // Reset form and refresh data
       setEditPassword("");
@@ -109,6 +152,8 @@ export default function ProfileScreen() {
     }
   };
 
+  const displayAvatar = profileData?.avatarUrl || user?.avatarUrl;
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <StatusBar
@@ -118,7 +163,7 @@ export default function ProfileScreen() {
       />
       <Header
         title="Profile"
-        onBack={() => router.back()}
+        onBack={() => safeGoBack(router, "/(tabs)/")}
         userRole={user?.role}
         onLogout={logout}
         onDashboard={() => router.push("/(tabs)/" as any)}
@@ -143,19 +188,28 @@ export default function ProfileScreen() {
                   onPress={() => {
                     setEditName(profileData?.fullName || user?.username || "");
                     setEditPassword("");
+                    setEditAvatarUrl(profileData?.avatarUrl || "");
                     setShowEditModal(true);
                   }}
                 >
                   <Edit2 size={18} color={theme.primary} />
                 </TouchableOpacity>
 
+                {/* Avatar Display */}
                 <View
                   style={[
                     styles.avatarContainer,
                     { backgroundColor: theme.blue100 },
                   ]}
                 >
-                  <User size={40} color={theme.primary} strokeWidth={2} />
+                  {displayAvatar ? (
+                    <Image
+                      source={{ uri: displayAvatar }}
+                      style={styles.avatarImage}
+                    />
+                  ) : (
+                    <User size={40} color={theme.primary} strokeWidth={2} />
+                  )}
                 </View>
 
                 <Text
@@ -333,60 +387,122 @@ export default function ProfileScreen() {
                 </TouchableOpacity>
               </View>
 
-              <Text style={styles.inputLabel}>Full Name</Text>
-              <TextInput
-                style={styles.input}
-                value={editName}
-                onChangeText={setEditName}
-                placeholder="Enter your full name"
-              />
-
-              <Text style={styles.inputLabel}>New Password (Optional)</Text>
-              <TextInput
-                style={styles.input}
-                value={editPassword}
-                onChangeText={setEditPassword}
-                placeholder="Leave blank to keep current"
-                secureTextEntry
-              />
-
-              <View style={[styles.dialogFooter, { marginTop: 16 }]}>
-                <TouchableOpacity
-                  style={[
-                    styles.dialogBtn,
-                    { borderColor: theme.border, borderWidth: 1 },
-                  ]}
-                  onPress={() => setShowEditModal(false)}
-                  disabled={isSubmitting}
-                >
-                  <Text
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {/* Avatar Uploader in Modal */}
+                <View style={styles.editAvatarWrapper}>
+                  <TouchableOpacity
                     style={[
-                      styles.dialogBtnText,
-                      { color: theme.textPrimary, fontFamily: Fonts?.sans },
+                      styles.editAvatarContainer,
+                      { backgroundColor: theme.blue100 },
                     ]}
+                    onPress={handlePickAvatar}
+                    disabled={isUploadingAvatar}
                   >
-                    Cancel
+                    {editAvatarUrl ? (
+                      <Image
+                        source={{ uri: editAvatarUrl }}
+                        style={styles.avatarImage}
+                      />
+                    ) : (
+                      <User size={40} color={theme.primary} strokeWidth={2} />
+                    )}
+
+                    <View
+                      style={[
+                        styles.cameraIconBadge,
+                        { backgroundColor: theme.primary },
+                      ]}
+                    >
+                      <Camera size={14} color="white" />
+                    </View>
+
+                    {isUploadingAvatar && (
+                      <View style={styles.uploadingOverlay}>
+                        <ActivityIndicator color="white" />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: theme.textSecondary,
+                      marginTop: 8,
+                    }}
+                  >
+                    Tap to change photo
                   </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.dialogBtn, { backgroundColor: theme.primary }]}
-                  onPress={handleSaveProfile}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <ActivityIndicator color="white" size="small" />
-                  ) : (
+                </View>
+
+                <Text style={styles.inputLabel}>Full Name</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editName}
+                  onChangeText={setEditName}
+                  placeholder="Enter your full name"
+                />
+
+                <Text style={styles.inputLabel}>New Password (Optional)</Text>
+                <View style={styles.inputIconWrapper}>
+                  <TextInput
+                    style={[styles.input, styles.passwordInput]} // Ensure passwordInput style exists
+                    value={editPassword}
+                    onChangeText={setEditPassword}
+                    placeholder="Leave blank to keep current"
+                    secureTextEntry={!showPassword} // Toggle based on state
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeIcon}
+                    onPress={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff size={20} color="#9CA3AF" />
+                    ) : (
+                      <Eye size={20} color="#9CA3AF" />
+                    )}
+                  </TouchableOpacity>
+                </View>
+
+                <View style={[styles.dialogFooter, { marginTop: 24 }]}>
+                  <TouchableOpacity
+                    style={[
+                      styles.dialogBtn,
+                      { borderColor: theme.border, borderWidth: 1 },
+                    ]}
+                    onPress={() => setShowEditModal(false)}
+                    disabled={isSubmitting || isUploadingAvatar}
+                  >
                     <Text
                       style={[
                         styles.dialogBtnText,
-                        { color: "white", fontFamily: Fonts?.bold },
+                        { color: theme.textPrimary, fontFamily: Fonts?.sans },
                       ]}
                     >
-                      Save Changes
+                      Cancel
                     </Text>
-                  )}
-                </TouchableOpacity>
-              </View>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.dialogBtn,
+                      { backgroundColor: theme.primary },
+                    ]}
+                    onPress={handleSaveProfile}
+                    disabled={isSubmitting || isUploadingAvatar}
+                  >
+                    {isSubmitting ? (
+                      <ActivityIndicator color="white" size="small" />
+                    ) : (
+                      <Text
+                        style={[
+                          styles.dialogBtnText,
+                          { color: "white", fontFamily: Fonts?.bold },
+                        ]}
+                      >
+                        Save Changes
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
             </View>
           </KeyboardAvoidingView>
         </View>
@@ -468,7 +584,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
-    position: "relative", // needed for absolute edit button
+    position: "relative",
   },
 
   editIconBtn: {
@@ -489,6 +605,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 16,
+    overflow: "hidden", // ensures image respects borderRadius
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
   },
   nameText: { fontSize: 20, marginBottom: 4 },
   roleBadge: {
@@ -534,14 +655,18 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    paddingHorizontal: 20,
   },
-  dialogContent: { width: "100%", borderRadius: 12, padding: 24 },
+  dialogContent: {
+    width: "100%",
+    borderRadius: 12,
+    padding: 24,
+  },
   modalHeaderRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 10,
   },
   dialogTitle: { fontSize: 18, marginBottom: 8 },
   dialogDescription: { fontSize: 14, marginBottom: 24, lineHeight: 20 },
@@ -556,6 +681,35 @@ const styles = StyleSheet.create({
   dialogBtnText: { fontSize: 14 },
 
   // Edit form styles
+  editAvatarWrapper: {
+    alignItems: "center",
+    marginBottom: 16,
+    marginTop: 10,
+  },
+  editAvatarContainer: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+    overflow: "hidden",
+  },
+  cameraIconBadge: {
+    position: "absolute",
+    bottom: 0,
+    width: "100%",
+    height: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    opacity: 0.8,
+  },
+  uploadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   inputLabel: {
     fontSize: 13,
     color: "#4B5563",
@@ -572,5 +726,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: 15,
     color: "#111827",
+  },
+  inputIconWrapper: {
+    position: "relative",
+    justifyContent: "center",
+  },
+  passwordInput: {
+    paddingRight: 45,
+  },
+  eyeIcon: {
+    position: "absolute",
+    right: 12,
+    zIndex: 1,
+    padding: 4,
   },
 });

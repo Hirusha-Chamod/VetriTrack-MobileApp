@@ -1,9 +1,8 @@
-
 import { Colors, Fonts } from "@/constants/theme";
-import { useRouter } from "expo-router";
 import { authApi } from "@/services/authService";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useToastStore } from "@/store/useToastStore";
+import { useRouter } from "expo-router";
 import { AlertCircle, Eye, EyeOff } from "lucide-react-native";
 import React, { useState } from "react";
 import {
@@ -22,10 +21,10 @@ import {
 export default function LoginScreen() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"staff" | "owner">("owner");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+
   const router = useRouter();
   const colorScheme = "light";
   const theme = Colors[colorScheme];
@@ -33,29 +32,18 @@ export default function LoginScreen() {
   const login = useAuthStore((state) => state.login);
   const showToast = useToastStore((state) => state.showToast);
 
-  const handleRoleChange = (selectedRole: "staff" | "owner") => {
-    setRole(selectedRole);
-    if (selectedRole === "owner") {
-      setUsername("");
-      setPassword("");
-    } else {
-      setUsername("");
-      setPassword("");
-    }
-    setError("");
-  };
-
   const handleLogin = async () => {
     setError("");
 
     if (!username.trim() || !password.trim()) {
-      setError("Invalid credentials. Please try again.");
+      setError("Please enter both username and password.");
       return;
     }
 
     setLoading(true);
     try {
       const data = await authApi.login(username, password);
+
       login({
         username: data.user.username,
         role: data.user.role,
@@ -120,76 +108,6 @@ export default function LoginScreen() {
           >
             Sign in to manage your inventory
           </Text>
-
-          <View style={styles.inputGroup}>
-            <Text
-              style={[
-                styles.label,
-                { color: theme.textPrimary, fontFamily: Fonts?.sans },
-              ]}
-            >
-              Login As
-            </Text>
-            <View
-              style={[
-                styles.toggleContainer,
-                { backgroundColor: theme.backgroundLightBlue },
-              ]}
-            >
-              <TouchableOpacity
-                style={[
-                  styles.toggleTab,
-                  role === "staff" && [
-                    styles.activeTab,
-                    { backgroundColor: theme.white },
-                  ],
-                ]}
-                onPress={() => handleRoleChange("staff")}
-              >
-                <Text
-                  style={[
-                    styles.toggleText,
-                    {
-                      color:
-                        role === "staff"
-                          ? theme.primary
-                          : "rgba(37, 99, 235, 0.7)",
-                      fontFamily: Fonts?.sans,
-                      fontWeight: role === "staff" ? "600" : "400",
-                    },
-                  ]}
-                >
-                  Staff
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.toggleTab,
-                  role === "owner" && [
-                    styles.activeTab,
-                    { backgroundColor: theme.white },
-                  ],
-                ]}
-                onPress={() => handleRoleChange("owner")}
-              >
-                <Text
-                  style={[
-                    styles.toggleText,
-                    {
-                      color:
-                        role === "owner"
-                          ? theme.primary
-                          : "rgba(37, 99, 235, 0.7)",
-                      fontFamily: Fonts?.sans,
-                      fontWeight: role === "owner" ? "600" : "400",
-                    },
-                  ]}
-                >
-                  Owner
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
 
           <View style={styles.inputGroup}>
             <Text
@@ -310,8 +228,6 @@ export default function LoginScreen() {
               Forgot Password?
             </Text>
           </TouchableOpacity>
-
-          <View style={[styles.divider, { borderBottomColor: theme.border }]} />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -319,30 +235,12 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    padding: 24,
-  },
-  headerContainer: {
-    alignItems: "center",
-    marginBottom: 32,
-  },
-  logo: {
-    width: 64,
-    height: 64,
-    marginBottom: 12,
-  },
-  mainTitle: {
-    fontSize: 36,
-  },
-  mainSubtitle: {
-    fontSize: 14,
-    marginTop: 4,
-  },
+  container: { flex: 1 },
+  scrollContent: { flexGrow: 1, justifyContent: "center", padding: 24 },
+  headerContainer: { alignItems: "center", marginBottom: 32 },
+  logo: { width: 64, height: 64, marginBottom: 12 },
+  mainTitle: { fontSize: 36 },
+  mainSubtitle: { fontSize: 14, marginTop: 4 },
   card: {
     borderRadius: 8,
     padding: 24,
@@ -352,46 +250,10 @@ const styles = StyleSheet.create({
     shadowRadius: 15,
     elevation: 5,
   },
-  cardTitle: {
-    fontSize: 24,
-    textAlign: "center",
-    marginBottom: 4,
-  },
-  cardSubtitle: {
-    fontSize: 14,
-    textAlign: "center",
-    marginBottom: 20,
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  toggleContainer: {
-    flexDirection: "row",
-    borderRadius: 8,
-    padding: 4,
-  },
-  toggleTab: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 6,
-  },
-  activeTab: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  toggleText: {
-    fontSize: 14,
-  },
+  cardTitle: { fontSize: 24, textAlign: "center", marginBottom: 4 },
+  cardSubtitle: { fontSize: 14, textAlign: "center", marginBottom: 20 },
+  inputGroup: { marginBottom: 16 },
+  label: { fontSize: 14, marginBottom: 8 },
   input: {
     height: 44,
     borderWidth: 1,
@@ -399,17 +261,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     fontSize: 14,
   },
-  passwordContainer: {
-    position: "relative",
-    justifyContent: "center",
-  },
-  passwordInput: {
-    paddingRight: 40,
-  },
-  eyeIcon: {
-    position: "absolute",
-    right: 12,
-  },
+  passwordContainer: { position: "relative", justifyContent: "center" },
+  passwordInput: { paddingRight: 40 },
+  eyeIcon: { position: "absolute", right: 12 },
   errorAlert: {
     flexDirection: "row",
     alignItems: "center",
@@ -418,10 +272,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 16,
   },
-  errorAlertText: {
-    fontSize: 14,
-    marginLeft: 8,
-  },
+  errorAlertText: { fontSize: 14, marginLeft: 8 },
   loginButton: {
     height: 44,
     borderRadius: 6,
@@ -429,34 +280,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
   },
-  buttonText: {
-    color: "white",
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  forgotPasswordButton: {
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  forgotPasswordText: {
-    fontSize: 14,
-  },
-  divider: {
-    borderBottomWidth: 1,
-    marginBottom: 16,
-  },
-  footer: {
-    alignItems: "center",
-  },
-  demoText: {
-    fontSize: 12,
-    marginBottom: 8,
-  },
-  demoCredentialsContainer: {
-    alignItems: "center",
-  },
-  demoCredentials: {
-    fontSize: 12,
-    marginBottom: 4,
-  },
+  buttonText: { color: "white", fontSize: 14, fontWeight: "500" },
+  forgotPasswordButton: { alignItems: "center", marginBottom: 16 },
+  forgotPasswordText: { fontSize: 14 },
 });

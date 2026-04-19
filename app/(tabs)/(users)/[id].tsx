@@ -1,38 +1,40 @@
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useToastStore } from "@/store/useToastStore";
 import { useUserStore } from "@/store/useUserStore";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    AlertTriangle,
-    ChevronLeft,
-    Lock,
-    Mail,
-    Save,
-    Shield,
-    User as UserIcon,
-    UserX,
+  AlertTriangle,
+  ChevronLeft,
+  Edit3,
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  Save,
+  Shield,
+  User as UserIcon,
+  UserX,
 } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function EditUserScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
   const showToast = useToastStore((state) => state.showToast);
 
@@ -44,6 +46,7 @@ export default function EditUserScreen() {
   const [fullName, setFullName] = useState(userToEdit?.fullName || "");
   const [email, setEmail] = useState(userToEdit?.email || "");
   const [password, setPassword] = useState(""); // Keep empty unless changing
+  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<"staff" | "owner">(
     (userToEdit?.role as "staff" | "owner") || "staff",
   );
@@ -51,11 +54,16 @@ export default function EditUserScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    // If user refreshes or accesses directly and store is empty, go back
-    if (!userToEdit) {
+    if (userToEdit) {
+      setFullName(userToEdit.fullName || "");
+      setEmail(userToEdit.email || "");
+      setRole(userToEdit.role as "staff" | "owner");
+      setPassword("");
+      setErrors({});
+    } else {
       router.back();
     }
-  }, [userToEdit]);
+  }, [id, userToEdit]);
 
   if (!userToEdit) return null;
 
@@ -96,7 +104,7 @@ export default function EditUserScreen() {
 
       await updateUser(id, updateData);
       showToast("User updated successfully!", "success");
-      router.back();
+      router.replace("/(tabs)/(users)");
     } catch (error: any) {
       showToast(error.message || "Failed to update user", "error");
     }
@@ -115,7 +123,7 @@ export default function EditUserScreen() {
             try {
               await deactivateUser(id);
               showToast("User deactivated", "success");
-              router.back();
+              router.replace("/(tabs)/(users)");
             } catch (error: any) {
               showToast(error.message || "Failed to deactivate user", "error");
             }
@@ -141,7 +149,7 @@ export default function EditUserScreen() {
         <SafeAreaView>
           <View style={styles.headerContent}>
             <TouchableOpacity
-              onPress={() => router.back()}
+              onPress={() => router.replace("/(tabs)/(users)")}
               style={styles.backBtn}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
@@ -277,15 +285,29 @@ export default function EditUserScreen() {
             <View style={styles.inputIconWrapper}>
               <Lock size={20} color="#9CA3AF" style={styles.inputIcon} />
               <TextInput
-                style={[styles.input, errors.password && styles.inputError]}
+                style={[
+                  styles.input,
+                  styles.passwordInput, // Added paddingRight style
+                  errors.password && styles.inputError,
+                ]}
                 placeholder="Leave blank to keep current"
                 value={password}
-                secureTextEntry
+                secureTextEntry={!showPassword} // Toggle visibility
                 onChangeText={(t) => {
                   setPassword(t);
                   setErrors({ ...errors, password: "" });
                 }}
               />
+              <TouchableOpacity
+                style={styles.eyeIcon}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff size={20} color="#9CA3AF" />
+                ) : (
+                  <Eye size={20} color="#9CA3AF" />
+                )}
+              </TouchableOpacity>
             </View>
             {errors.password && (
               <Text style={styles.errorText}>{errors.password}</Text>
@@ -356,9 +378,8 @@ export default function EditUserScreen() {
   );
 }
 
-// Just a quick wrapper to use the standard edit icon
 const Edit3Icon = ({ size, color }: { size: number; color: string }) => {
-  return <Save size={size} color={color} />;
+  return <Edit3 size={size} color={color} />; // Now it uses the correct icon
 };
 
 const styles = StyleSheet.create({
@@ -482,4 +503,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   submitBtnText: { color: "white", fontSize: 16 },
+  passwordInput: {
+    paddingRight: 45,
+  },
+  eyeIcon: {
+    position: "absolute",
+    right: 12,
+    zIndex: 1,
+    padding: 4,
+  },
 });

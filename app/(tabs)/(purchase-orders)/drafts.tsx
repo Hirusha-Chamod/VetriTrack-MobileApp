@@ -1,32 +1,31 @@
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { usePurchaseOrderStore } from "@/store/usePurchaseOrderStore";
 import { useSupplierStore } from "@/store/useSupplierStore";
 import { useRouter } from "expo-router";
 import {
-    Building2,
-    ChevronLeft,
-    ChevronRight,
-    FileText,
-    Package,
-    Plus,
+  Building2,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  Package,
+  Plus,
 } from "lucide-react-native";
 import React, { useEffect } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    RefreshControl,
-    SafeAreaView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function DraftPOsScreen() {
   const router = useRouter();
- const colorScheme = 'light';
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
 
   const { drafts, fetchDrafts, isLoading, error } = usePurchaseOrderStore();

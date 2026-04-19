@@ -1,10 +1,10 @@
 import {
-    CreateTransactionPayload,
-    Transaction,
-    transactionApi,
+  CreateTransactionPayload,
+  Transaction,
+  transactionApi,
 } from "@/services/transactionService";
 import { create } from "zustand";
-import { useInventoryStore } from "./useInventoryStore"; // To refresh inventory after a transaction
+import { useInventoryStore } from "./useInventoryStore";
 
 interface TransactionState {
   transactions: Transaction[];
@@ -13,6 +13,9 @@ interface TransactionState {
 
   fetchTransactions: () => Promise<void>;
   processTransaction: (data: CreateTransactionPayload) => Promise<Transaction>;
+  importTransactions: (
+    formData: FormData,
+  ) => Promise<{ success: boolean; message: string }>;
   clearError: () => void;
 }
 
@@ -41,13 +44,11 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
     try {
       const newTransaction = await transactionApi.create(data);
 
-      // Add it to our local state log
       set((state) => ({
         transactions: [newTransaction, ...state.transactions],
         isLoading: false,
       }));
 
-      // CRITICAL: Force the Inventory store to refresh so the UI immediately shows the new stock levels!
       useInventoryStore.getState().fetchItems();
 
       return newTransaction;
@@ -57,6 +58,27 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
         isLoading: false,
       });
       throw error;
+    }
+  },
+
+  importTransactions: async (formData: FormData) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await transactionApi.importTransactions(formData);
+
+      await get().fetchTransactions();
+      useInventoryStore.getState().fetchItems();
+
+      set({ isLoading: false });
+      return response;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || "Failed to import transactions";
+      set({
+        error: errorMessage,
+        isLoading: false,
+      });
+      throw new Error(errorMessage);
     }
   },
 

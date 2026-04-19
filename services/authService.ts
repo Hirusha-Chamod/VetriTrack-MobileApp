@@ -6,6 +6,7 @@ export interface LoginResponse {
     id: string;
     username: string;
     role: "staff" | "owner";
+    avatarUrl?: string;
   };
 }
 
@@ -16,29 +17,29 @@ export interface UserProfile {
   email: string;
   role: "staff" | "owner";
   status: "active" | "inactive";
+  avatarUrl?: string;
   lastLogin?: string;
   createdAt: string;
 }
 
-// Data needed to create a new user (matches your SignUpDto)
 export interface CreateUserPayload {
   fullName: string;
   username: string;
   email: string;
-  password?: string; // Optional if you auto-generate, but required by your DTO currently
+  password?: string;
   role: "staff" | "owner";
+  avatarUrl?: string;
 }
-
 
 export interface UpdateUserPayload {
   fullName?: string;
   email?: string;
   role?: "staff" | "owner";
   password?: string;
+  avatarUrl?: string;
 }
 
 export const authApi = {
-
   login: async (username: string, password: string): Promise<LoginResponse> => {
     const response = await api.post<LoginResponse>("/auth/login", {
       username,
@@ -78,26 +79,42 @@ export const authApi = {
   },
 
   forgotPassword: async (email: string): Promise<{ message: string }> => {
-    const response = await api.post<{ message: string }>("/auth/forgot-password", {
-      email,
-    });
+    const response = await api.post<{ message: string }>(
+      "/auth/forgot-password",
+      {
+        email,
+      },
+    );
     return response.data;
   },
 
-  verifyOtp: async (email: string, otp: string): Promise<{ isValid: boolean; message: string }> => {
-    const response = await api.post<{ isValid: boolean; message: string }>("/auth/verify-otp", {
-      email,
-      otp,
-    });
+  verifyOtp: async (
+    email: string,
+    otp: string,
+  ): Promise<{ isValid: boolean; message: string }> => {
+    const response = await api.post<{ isValid: boolean; message: string }>(
+      "/auth/verify-otp",
+      {
+        email,
+        otp,
+      },
+    );
     return response.data;
   },
 
-  resetPassword: async (email: string, otp: string, newPassword: string): Promise<{ message: string }> => {
-    const response = await api.post<{ message: string }>("/auth/reset-password", {
-      email,
-      otp,
-      newPassword,
-    });
+  resetPassword: async (
+    email: string,
+    otp: string,
+    newPassword: string,
+  ): Promise<{ message: string }> => {
+    const response = await api.post<{ message: string }>(
+      "/auth/reset-password",
+      {
+        email,
+        otp,
+        newPassword,
+      },
+    );
     return response.data;
   },
 };

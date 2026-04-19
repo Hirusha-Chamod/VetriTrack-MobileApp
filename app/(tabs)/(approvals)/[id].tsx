@@ -1,40 +1,40 @@
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Supplier, supplierApi } from "@/services/supplierService";
 import { useApprovalStore } from "@/store/useApprovalStore";
 import { useToastStore } from "@/store/useToastStore";
+import { safeGoBack } from "@/utils/navigation";
 import { format } from "date-fns";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    AlertTriangle,
-    Check,
-    CheckCircle,
-    ChevronLeft,
-    FileText,
-    Lightbulb,
-    Minus,
-    Plus,
-    X,
-    XCircle,
+  AlertTriangle,
+  Check,
+  CheckCircle,
+  ChevronLeft,
+  FileText,
+  Lightbulb,
+  Minus,
+  Plus,
+  X,
+  XCircle,
 } from "lucide-react-native";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    Modal,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Modal,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function RequestReviewScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
- const colorScheme = 'light';
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
   const showToast = useToastStore((state) => state.showToast);
 
@@ -112,7 +112,7 @@ export default function RequestReviewScreen() {
         selectedSupplierId,
       );
       showToast("Request approved! Draft PO created.", "success");
-      router.back();
+      safeGoBack(router, "/(tabs)/(approvals)");
     } catch (error: any) {
       showToast(error.message || "Failed to approve request", "error");
     }
@@ -123,7 +123,7 @@ export default function RequestReviewScreen() {
       await updateRequestStatus(request._id, "rejected");
       setShowRejectDialog(false);
       showToast("Request rejected.", "success");
-      router.back();
+      safeGoBack(router, "/(tabs)/(approvals)");
     } catch (error: any) {
       showToast(error.message || "Failed to reject request", "error");
     }

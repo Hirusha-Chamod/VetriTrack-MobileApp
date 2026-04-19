@@ -1,5 +1,4 @@
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useApprovalStore } from "@/store/useApprovalStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useRouter } from "expo-router";
@@ -31,7 +30,7 @@ type TabStatus = "all" | "pending" | "approved" | "rejected";
 
 export default function MyRequestsScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
 
   const { user } = useAuthStore();

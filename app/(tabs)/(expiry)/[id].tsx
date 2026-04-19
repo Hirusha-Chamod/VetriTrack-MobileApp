@@ -1,36 +1,35 @@
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { ExpiryReportItem, inventoryApi } from "@/services/inventoryService";
 import { useInventoryStore } from "@/store/useInventoryStore";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    AlertTriangle,
-    ArrowLeft,
-    Calendar,
-    FileText,
-    MoreVertical,
-    Package,
-    XCircle,
+  AlertTriangle,
+  ArrowLeft,
+  Calendar,
+  FileText,
+  MoreVertical,
+  Package,
+  XCircle,
 } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    KeyboardAvoidingView,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function BatchDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
- const colorScheme = 'light';
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
 
   const { items: inventoryItems } = useInventoryStore();
@@ -125,11 +124,11 @@ export default function BatchDetailScreen() {
     router.push({
       pathname: "/(tabs)/(transactions)/adjust",
       params: {
-        prefillItemId: matchedItem?._id, 
-        prefillBatchId: batchData._id, 
-        prefillQty: batchData.quantity.toString(), 
-        prefillType: "remove", 
-        prefillReason: isExpired ? "expired-disposed" : "other", 
+        prefillItemId: matchedItem?._id,
+        prefillBatchId: batchData._id,
+        prefillQty: batchData.quantity.toString(),
+        prefillType: "remove",
+        prefillReason: isExpired ? "expired-disposed" : "other",
         prefillNotes: notes
           ? `[Batch: ${batchData.batchId}] ${notes}` // Keep .batchId here for human readable notes!
           : `[Batch: ${batchData.batchId}]`,

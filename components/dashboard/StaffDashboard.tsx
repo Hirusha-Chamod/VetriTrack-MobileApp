@@ -1,5 +1,5 @@
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { authApi, UserProfile } from "@/services/authService";
 import { inventoryApi } from "@/services/inventoryService";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useInventoryStore } from "@/store/useInventoryStore";
@@ -17,7 +17,7 @@ import {
   Package,
   UserCircle2,
 } from "lucide-react-native";
-import React, { useCallback, useEffect, useState } from "react"; // Added useState & useCallback
+import React, { useCallback, useEffect, useState } from "react";
 import {
   RefreshControl,
   SafeAreaView,
@@ -31,7 +31,7 @@ import {
 
 export default function StaffDashboard() {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
 
   const { user } = useAuthStore();
@@ -40,7 +40,8 @@ export default function StaffDashboard() {
     useInventoryStore();
   // Local state for pull-to-refresh
   const [refreshing, setRefreshing] = useState(false);
-  const [expiringSoonCount, setExpiringSoonCount] = useState(0); // 👈 NEW: State for real count
+  const [expiringSoonCount, setExpiringSoonCount] = useState(0);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
 
   const fetchExpiryCount = async () => {
     try {
@@ -52,14 +53,14 @@ export default function StaffDashboard() {
   };
 
   useEffect(() => {
-    if (!user?.token) {
-      return;
-    }
+    if (!user?.token || !user?.id) return;
+
+    authApi.getUserById(user.id).then(setProfile).catch(console.error);
 
     fetchMyTasks();
     fetchInventory();
     fetchExpiryCount();
-  }, [user?.token]);
+  }, [user?.token, user?.id]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -92,6 +93,8 @@ export default function StaffDashboard() {
   }).length;
 
   const recommendationsCount = 4;
+  const firstName =
+    profile?.fullName?.split(" ")[0] || user?.username || "Staff";
 
   const handleNavigate = (destination: string) => {
     if (destination === "profile") router.push("/profile" as any);
@@ -199,7 +202,7 @@ export default function StaffDashboard() {
       destination: "my-requests",
     },
   ];
-
+  console.log("name:", user);
   return (
     <View style={[styles.container, { backgroundColor: "#F9FAFB" }]}>
       <StatusBar
@@ -216,10 +219,10 @@ export default function StaffDashboard() {
                 Welcome back,
               </Text>
               <Text style={[styles.userNameText, { fontFamily: Fonts?.bold }]}>
-                {user?.username || "Staff"}
+                {firstName}
               </Text>
               <Text style={[styles.roleSubText, { fontFamily: Fonts?.sans }]}>
-                Staff Member
+                Staff
               </Text>
             </View>
             <TouchableOpacity

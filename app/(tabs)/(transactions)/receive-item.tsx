@@ -1,9 +1,9 @@
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useInventoryStore } from "@/store/useInventoryStore";
 import { usePurchaseOrderStore } from "@/store/usePurchaseOrderStore";
 import { useToastStore } from "@/store/useToastStore";
 import { useTransactionStore } from "@/store/useTransactionStore";
+import { safeGoBack } from "@/utils/navigation";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -36,7 +36,7 @@ export default function ReceiveLineItemScreen() {
     itemId: string;
   }>();
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
   const showToast = useToastStore((state) => state.showToast);
 
@@ -163,7 +163,7 @@ export default function ReceiveLineItemScreen() {
       await receivePoItems(poId, itemId, qty);
 
       showToast(`Successfully received ${qty} units!`, "success");
-      router.back();
+      safeGoBack(router, "/(tabs)/(transactions)/receive");
     } catch (error: any) {
       showToast(error.message || "Failed to receive item", "error");
     }
@@ -185,7 +185,9 @@ export default function ReceiveLineItemScreen() {
         <SafeAreaView>
           <View style={styles.headerContent}>
             <TouchableOpacity
-              onPress={() => router.back()}
+              onPress={() =>
+                safeGoBack(router, "/(tabs)/(transactions)/receive")
+              }
               style={styles.backBtn}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >

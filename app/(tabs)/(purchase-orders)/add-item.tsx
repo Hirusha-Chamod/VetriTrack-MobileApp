@@ -1,31 +1,31 @@
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useInventoryStore } from "@/store/useInventoryStore";
 import { usePurchaseOrderStore } from "@/store/usePurchaseOrderStore";
 import { useSupplierStore } from "@/store/useSupplierStore";
 import { useToastStore } from "@/store/useToastStore";
+import { safeGoBack } from "@/utils/navigation";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Building2, ChevronRight, Plus, Search, X } from "lucide-react-native";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    KeyboardAvoidingView,
-    Platform,
-    SafeAreaView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 type Step = "select-supplier" | "select-item" | "enter-quantity";
 
 export default function AddItemToDraftPOScreen() {
   const router = useRouter();
- const colorScheme = 'light';
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
   const showToast = useToastStore((state) => state.showToast);
 
@@ -124,7 +124,7 @@ export default function AddItemToDraftPOScreen() {
       });
 
       showToast("Item added to draft successfully!", "success");
-      router.back(); // Go back to the drafts list
+      safeGoBack(router, "/(tabs)/(purchase-orders)/drafts");
     } catch (error: any) {
       showToast(error.message || "Failed to add item", "error");
     }
@@ -146,7 +146,9 @@ export default function AddItemToDraftPOScreen() {
         <SafeAreaView>
           <View style={styles.headerContent}>
             <TouchableOpacity
-              onPress={() => router.back()}
+              onPress={() =>
+                safeGoBack(router, "/(tabs)/(purchase-orders)/drafts")
+              }
               style={styles.closeBtn}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >

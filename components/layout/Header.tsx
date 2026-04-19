@@ -1,23 +1,22 @@
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
-    ArrowLeft,
-    LayoutDashboard,
-    LogOut,
-    Menu,
-    MoreVertical,
-    UserCircle,
+  ArrowLeft,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  MoreVertical,
+  UserCircle,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-    Modal,
-    Platform,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  Modal,
+  Platform,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 
 export type UserRole = "owner" | "staff" | string; // Adjust based on your types
@@ -43,7 +42,7 @@ export const Header: React.FC<HeaderProps> = ({
   onDashboard,
   onProfile,
 }) => {
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
   const [menuVisible, setMenuVisible] = useState(false);
 

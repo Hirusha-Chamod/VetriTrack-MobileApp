@@ -1,36 +1,36 @@
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useApprovalStore } from "@/store/useApprovalStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useToastStore } from "@/store/useToastStore";
+import { safeGoBack } from "@/utils/navigation";
 import { format } from "date-fns";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    CheckCircle,
-    ChevronLeft,
-    Clock,
-    FileText,
-    Package,
-    X,
-    XCircle
+  CheckCircle,
+  ChevronLeft,
+  Clock,
+  FileText,
+  Package,
+  X,
+  XCircle,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-    ActivityIndicator,
-    Modal,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Modal,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function RequestDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
   const showToast = useToastStore((state) => state.showToast);
 
@@ -54,7 +54,7 @@ export default function RequestDetailScreen() {
     try {
       await updateRequestStatus(request._id, "approved");
       showToast("Request approved! Draft PO created.", "success");
-      router.back();
+      safeGoBack(router, "/(tabs)/(requests)");
     } catch (error: any) {
       showToast(error.message || "Failed to approve request", "error");
     }
@@ -66,7 +66,7 @@ export default function RequestDetailScreen() {
       await updateRequestStatus(request._id, "rejected");
       setShowRejectModal(false);
       showToast("Request rejected.", "success");
-      router.back();
+      safeGoBack(router, "/(tabs)/(requests)");
     } catch (error: any) {
       showToast(error.message || "Failed to reject request", "error");
     }

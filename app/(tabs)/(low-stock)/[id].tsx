@@ -1,38 +1,38 @@
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { approvalApi } from "@/services/approvalService";
 import { purchaseOrderApi } from "@/services/purchaseOrderService";
 import { Supplier, supplierApi } from "@/services/supplierService";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useInventoryStore } from "@/store/useInventoryStore";
 import { useToastStore } from "@/store/useToastStore";
+import { safeGoBack } from "@/utils/navigation";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    AlertTriangle,
-    Check,
-    ChevronLeft,
-    Minus,
-    Package,
-    Plus,
-    Send,
-    ShoppingCart,
+  AlertTriangle,
+  Check,
+  ChevronLeft,
+  Minus,
+  Package,
+  Plus,
+  Send,
+  ShoppingCart,
 } from "lucide-react-native";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function LowStockDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
- const colorScheme = 'light';
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
   const showToast = useToastStore((state) => state.showToast);
 
@@ -154,7 +154,7 @@ export default function LowStockDetailScreen() {
       });
 
       showToast("Reorder request submitted successfully!", "success");
-      router.back();
+      safeGoBack(router, "/(tabs)/(low-stock)");
     } catch (error: any) {
       showToast(error.message || "Failed to submit request", "error");
     } finally {
@@ -238,7 +238,7 @@ export default function LowStockDetailScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.outlineBtn}
-              onPress={() => router.back()}
+              onPress={() => safeGoBack(router, "/(tabs)/(low-stock)")}
             >
               <Text style={styles.outlineBtnText}>Back to Low Stock</Text>
             </TouchableOpacity>

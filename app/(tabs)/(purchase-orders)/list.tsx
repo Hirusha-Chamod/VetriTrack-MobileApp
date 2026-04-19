@@ -1,32 +1,32 @@
 import { Header } from "@/components/layout/Header";
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePurchaseOrderStore } from "@/store/usePurchaseOrderStore";
+import { safeGoBack } from "@/utils/navigation";
 import { useRouter } from "expo-router";
 import {
-    AlertCircle,
-    CheckCircle,
-    ChevronRight,
-    Clock,
-    Package,
+  AlertCircle,
+  CheckCircle,
+  ChevronRight,
+  Clock,
+  Package,
 } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    RefreshControl,
-    SafeAreaView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function PurchaseOrdersScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
 
   const { user, logout } = useAuthStore();
@@ -41,7 +41,7 @@ export default function PurchaseOrdersScreen() {
     // Fetch POs on mount
     fetchPurchaseOrders();
   }, []);
-  
+
   const filteredPOs = purchaseOrders.filter((po) => {
     if (po.status === "Draft") return false; // Drafts usually go in a separate screen
     if (activeTab === "All") return true;
@@ -181,7 +181,7 @@ export default function PurchaseOrdersScreen() {
       {/* Top Utility Header */}
       <Header
         title="Orders Hub"
-        onBack={() => router.back()}
+        onBack={() => safeGoBack(router, "/(tabs)/(purchase-orders)")}
         userRole={user?.role}
         onLogout={logout}
         onDashboard={() => router.push("/(tabs)/")}

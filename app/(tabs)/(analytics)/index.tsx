@@ -2,23 +2,24 @@ import { Header } from "@/components/layout/Header";
 import { Fonts } from "@/constants/theme";
 import { useAnalyticsStore } from "@/store/useAnalyticsStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { safeGoBack } from "@/utils/navigation";
 import { useRouter } from "expo-router";
 import {
-    AlertTriangle,
-    BarChart3,
-    Building2,
-    Package,
+  AlertTriangle,
+  BarChart3,
+  Building2,
+  Package,
 } from "lucide-react-native";
 import React, { useEffect } from "react";
 import {
-    ActivityIndicator,
-    RefreshControl,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { BarChart } from "react-native-gifted-charts";
 
@@ -61,7 +62,7 @@ export default function AnalyticsDashboardScreen() {
       />
       <Header
         title="Analytics"
-        onBack={() => router.back()}
+        onBack={() => safeGoBack(router, "/(tabs)/")}
         userRole={user?.role}
         onLogout={logout}
         onDashboard={() => router.push("/(tabs)/" as any)}

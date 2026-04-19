@@ -1,34 +1,36 @@
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useToastStore } from "@/store/useToastStore";
 import { useUserStore } from "@/store/useUserStore";
+import { safeGoBack } from "@/utils/navigation";
 import { useRouter } from "expo-router";
 import {
-    ChevronLeft,
-    Lock,
-    Mail,
-    Shield,
-    User as UserIcon,
-    UserPlus,
+  ChevronLeft,
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  Shield,
+  User as UserIcon,
+  UserPlus,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-    ActivityIndicator,
-    KeyboardAvoidingView,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function AddUserScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
   const showToast = useToastStore((state) => state.showToast);
 
@@ -39,6 +41,7 @@ export default function AddUserScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"staff" | "owner">("staff");
+  const [showPassword, setShowPassword] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -78,7 +81,7 @@ export default function AddUserScreen() {
       });
 
       showToast("User created successfully!", "success");
-      router.back();
+      safeGoBack(router, "/(tabs)/(users)");
     } catch (error: any) {
       showToast(error.message || "Failed to create user", "error");
     }
@@ -100,7 +103,7 @@ export default function AddUserScreen() {
         <SafeAreaView>
           <View style={styles.headerContent}>
             <TouchableOpacity
-              onPress={() => router.back()}
+              onPress={() => safeGoBack(router, "/(tabs)/(users)")}
               style={styles.backBtn}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
@@ -269,19 +272,37 @@ export default function AddUserScreen() {
             <Text style={styles.inputLabel}>
               Password <Text style={styles.asterisk}>*</Text>
             </Text>
+
             <View style={styles.inputIconWrapper}>
               <Lock size={20} color="#9CA3AF" style={styles.inputIcon} />
               <TextInput
-                style={[styles.input, errors.password && styles.inputError]}
+                style={[
+                  styles.input,
+                  styles.passwordInput, // Added special padding
+                  errors.password && styles.inputError,
+                ]}
                 placeholder="Minimum 6 characters"
                 value={password}
-                secureTextEntry
+                secureTextEntry={!showPassword} // Toggle this based on state
                 onChangeText={(t) => {
                   setPassword(t);
                   setErrors({ ...errors, password: "" });
                 }}
               />
+
+              {/* Eye Icon Toggle */}
+              <TouchableOpacity
+                style={styles.eyeIcon}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff size={20} color="#9CA3AF" />
+                ) : (
+                  <Eye size={20} color="#9CA3AF" />
+                )}
+              </TouchableOpacity>
             </View>
+
             {errors.password && (
               <Text style={styles.errorText}>{errors.password}</Text>
             )}
@@ -408,4 +429,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   submitBtnText: { color: "white", fontSize: 16 },
+  passwordInput: {
+    paddingRight: 45, // Make room for the eye icon
+  },
+  eyeIcon: {
+    position: "absolute",
+    right: 12,
+    zIndex: 1,
+    padding: 4,
+  },
 });

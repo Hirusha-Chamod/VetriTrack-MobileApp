@@ -1,31 +1,31 @@
 import { Header } from "@/components/layout/Header";
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useSupplierStore } from "@/store/useSupplierStore";
 import { useToastStore } from "@/store/useToastStore";
+import { safeGoBack } from "@/utils/navigation";
 import { useRouter } from "expo-router";
 import { Building2, Save, X } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-    ActivityIndicator,
-    KeyboardAvoidingView,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function AddSupplierScreen() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
 
   const { createSupplier, isLoading } = useSupplierStore();
@@ -73,7 +73,7 @@ export default function AddSupplierScreen() {
         notes: formData.notes,
       });
       showToast("Supplier added successfully!", "success");
-      router.back();
+      safeGoBack(router, "/(tabs)/(suppliers)");
     } catch (error: any) {
       showToast(error.message || "Failed to add supplier", "error");
     }
@@ -129,7 +129,7 @@ export default function AddSupplierScreen() {
       <StatusBar barStyle="light-content" backgroundColor="#0891B2" />
       <Header
         title="Add Supplier"
-        onBack={() => router.back()}
+        onBack={() => safeGoBack(router, "/(tabs)/(suppliers)")}
         userRole={user?.role}
         onLogout={logout}
         onDashboard={() => router.push("/(tabs)/" as any)}
@@ -298,7 +298,7 @@ export default function AddSupplierScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.btnOutline, { borderColor: theme.border }]}
-            onPress={() => router.back()}
+            onPress={() => safeGoBack(router, "/(tabs)/(suppliers)")}
             disabled={isLoading}
           >
             <X size={18} color={theme.textPrimary} style={{ marginRight: 8 }} />

@@ -1,5 +1,4 @@
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTaskStore } from "@/store/useTaskStore";
 import { useUserStore } from "@/store/useUserStore";
@@ -37,9 +36,8 @@ type DueFilter = "all" | "today" | "this-week" | "overdue";
 
 export default function TasksListScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
-
 
   const { user } = useAuthStore();
   const isOwner = user?.role === "owner";
@@ -125,7 +123,6 @@ export default function TasksListScreen() {
       item.status !== "cancelled";
 
     return (
-      
       <TouchableOpacity
         style={styles.taskCard}
         activeOpacity={0.7}
@@ -228,7 +225,6 @@ export default function TasksListScreen() {
                 <ClipboardList size={20} color="white" />
               </View>
               <View style={{ flex: 1 }}>
-
                 <Text style={[styles.headerTitle, { fontFamily: Fonts?.bold }]}>
                   {isOwner ? "All Tasks" : "My Tasks"}
                 </Text>

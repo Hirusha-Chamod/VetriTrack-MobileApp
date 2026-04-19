@@ -1,5 +1,4 @@
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useInventoryStore } from "@/store/useInventoryStore";
 import { usePurchaseOrderStore } from "@/store/usePurchaseOrderStore";
 import { useToastStore } from "@/store/useToastStore";
@@ -28,7 +27,7 @@ import {
 export default function PODetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const colorScheme = 'light';
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
   const { items: inventoryItems } = useInventoryStore();
   const showToast = useToastStore((state) => state.showToast);
@@ -469,7 +468,7 @@ export default function PODetailScreen() {
       </ScrollView>
 
       {/* Fixed Bottom Action */}
-  
+
       {(po.status === "Sent" || po.status === "Partial") && (
         <View style={styles.bottomBarStacked}>
           {/* 👇 SafeAreaView moved INSIDE the absolute View */}
@@ -479,7 +478,9 @@ export default function PODetailScreen() {
               onPress={() => router.push("/(tabs)/(transactions)/receive")}
             >
               <Download size={20} color="white" style={{ marginRight: 8 }} />
-              <Text style={[styles.receiveBtnText, { fontFamily: Fonts?.bold }]}>
+              <Text
+                style={[styles.receiveBtnText, { fontFamily: Fonts?.bold }]}
+              >
                 Receive Stock
               </Text>
             </TouchableOpacity>

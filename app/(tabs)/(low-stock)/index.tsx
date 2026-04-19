@@ -1,29 +1,28 @@
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useInventoryStore } from "@/store/useInventoryStore";
 import { useRouter } from "expo-router";
 import {
-    AlertCircle,
-    AlertTriangle,
-    CheckCircle,
-    ChevronLeft,
-    ChevronRight,
+  AlertCircle,
+  AlertTriangle,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react-native";
 import React, { useEffect } from "react";
 import {
-    RefreshControl,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function LowStockScreen() {
   const router = useRouter();
- const colorScheme = 'light';
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
 
   const { items, fetchItems, isLoading } = useInventoryStore();

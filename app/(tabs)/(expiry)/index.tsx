@@ -1,5 +1,4 @@
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
     ExpiryReport,
     ExpiryReportItem,
@@ -31,7 +30,7 @@ type Tab = "Expiring Soon" | "Expired";
 
 export default function ExpiryManagementScreen() {
   const router = useRouter();
-  const colorScheme = 'light';
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
 
   const [activeTab, setActiveTab] = useState<Tab>("Expired");

@@ -2,29 +2,30 @@ import { Header } from "@/components/layout/Header";
 import { Colors, Fonts } from "@/constants/theme";
 import { useApprovalStore } from "@/store/useApprovalStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { safeGoBack } from "@/utils/navigation";
 import { format } from "date-fns";
 import { useRouter } from "expo-router";
 import {
-  AlertCircle,
-  AlertTriangle,
-  CheckCircle,
-  ChevronRight,
-  Clock,
-  FileText,
-  Lightbulb,
+    AlertCircle,
+    AlertTriangle,
+    CheckCircle,
+    ChevronRight,
+    Clock,
+    FileText,
+    Lightbulb,
 } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  FlatList,
-  RefreshControl,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    FlatList,
+    RefreshControl,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 type TabFilter = "pending" | "all";
@@ -44,7 +45,6 @@ export default function ApprovalCenterScreen() {
 
   useEffect(() => {
     fetchPendingRequests();
-
   }, []);
 
   const filterBySource = (reqs: any[]) => {
@@ -156,7 +156,7 @@ export default function ApprovalCenterScreen() {
 
       <Header
         title="Approvals"
-        onBack={() => router.back()}
+        onBack={() => safeGoBack(router, "/(tabs)/")}
         userRole={user?.role}
         onLogout={logout}
         onDashboard={() => router.push("/(tabs)/" as any)}

@@ -1,63 +1,115 @@
 import { Header } from "@/components/layout/Header";
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useToastStore } from "@/store/useToastStore";
+import { useTransactionStore } from "@/store/useTransactionStore";
+import { safeGoBack } from "@/utils/navigation";
+import * as DocumentPicker from "expo-document-picker";
 import { useRouter } from "expo-router";
 import {
-    ArrowUpDown,
-    ChevronRight,
-    Download,
-    Edit3,
-    History,
-    Upload,
+  ArrowUpDown,
+  ChevronRight,
+  Download,
+  Edit3,
+  FileSpreadsheet,
+  History,
+  Upload,
 } from "lucide-react-native";
-import React from "react";
+import React, { useState } from "react";
 import {
-    SafeAreaView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function TransactionsHubScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
   const { user, logout } = useAuthStore();
+  const showToast = useToastStore((state) => state.showToast);
+  const { importTransactions, isLoading } = useTransactionStore();
+
+  const [isPicking, setIsPicking] = useState(false);
+
+  const handleImport = async () => {
+    try {
+      setIsPicking(true);
+      const result = await DocumentPicker.getDocumentAsync({
+        type: [
+          "text/csv",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "application/vnd.ms-excel",
+          "text/comma-separated-values",
+        ],
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        setIsPicking(false);
+        return;
+      }
+
+      const file = result.assets[0];
+      const formData = new FormData();
+      formData.append("file", {
+        uri: file.uri,
+        name: file.name,
+        type: file.mimeType || "application/octet-stream",
+      } as any);
+
+      const response = await importTransactions(formData);
+      showToast(response.message, "success");
+    } catch (error: any) {
+      showToast(error.message || "Failed to import transactions", "error");
+    } finally {
+      setIsPicking(false);
+    }
+  };
 
   const actions = [
     {
       title: "Receive Stock",
       description: "Record incoming inventory from POs",
       icon: Download,
-      bg: "#F0FDF4", // green-50
-      iconColor: "#16A34A", // green-600
+      bg: "#F0FDF4",
+      iconColor: "#16A34A",
       destination: "receive",
     },
     {
       title: "Issue Stock (FEFO)",
       description: "Issue stock using First Expiry, First Out",
       icon: Upload,
-      bg: "#EFF6FF", // blue-50
-      iconColor: "#2563EB", // blue-600
+      bg: "#EFF6FF",
+      iconColor: "#2563EB",
       destination: "issue",
     },
     {
       title: "Stock Adjustment",
       description: "Adjust inventory for corrections",
       icon: Edit3,
-      bg: "#FFF7ED", // orange-50
-      iconColor: "#EA580C", // orange-600
+      bg: "#FFF7ED",
+      iconColor: "#EA580C",
       destination: "adjust",
+    },
+    {
+      title: "Bulk Import",
+      description: "Import transactions via CSV or Excel",
+      icon: FileSpreadsheet,
+      bg: "#F3E8FF",
+      iconColor: "#7E22CE",
+      onPress: handleImport,
     },
     {
       title: "Transaction History",
       description: "View the audit log of all stock movements",
       icon: History,
-      bg: "#F1F5F9", // slate-100
-      iconColor: "#475569", // slate-600
+      bg: "#F1F5F9",
+      iconColor: "#475569",
       destination: "history",
     },
   ];
@@ -70,17 +122,15 @@ export default function TransactionsHubScreen() {
         translucent={false}
       />
 
-      {/* Top Utility Header */}
       <Header
         title="Transactions"
-        onBack={() => router.back()}
+        onBack={() => safeGoBack(router, "/(tabs)/")}
         userRole={user?.role}
         onLogout={logout}
         onDashboard={() => router.push("/(tabs)/")}
         onProfile={() => router.push("/profile" as any)}
       />
 
-      {/* Main Feature Header - Purple 600 */}
       <View style={[styles.headerWrapper, { backgroundColor: "#9333EA" }]}>
         <SafeAreaView>
           <View style={styles.headerContent}>
@@ -108,9 +158,16 @@ export default function TransactionsHubScreen() {
           <TouchableOpacity
             key={idx}
             style={styles.card}
-            onPress={() =>
-              router.push(`/(tabs)/(transactions)/${action.destination}` as any)
-            }
+            onPress={() => {
+              if (action.onPress) {
+                action.onPress();
+              } else if (action.destination) {
+                router.push(
+                  `/(tabs)/(transactions)/${action.destination}` as any,
+                );
+              }
+            }}
+            disabled={action.onPress ? isPicking || isLoading : false}
             activeOpacity={0.7}
           >
             <View style={[styles.iconBox, { backgroundColor: action.bg }]}>
@@ -136,7 +193,11 @@ export default function TransactionsHubScreen() {
               </Text>
             </View>
 
-            <ChevronRight size={20} color="#9CA3AF" />
+            {action.onPress && (isPicking || isLoading) ? (
+              <ActivityIndicator color={action.iconColor} />
+            ) : (
+              <ChevronRight size={20} color="#9CA3AF" />
+            )}
           </TouchableOpacity>
         ))}
       </View>

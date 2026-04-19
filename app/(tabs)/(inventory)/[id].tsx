@@ -1,5 +1,4 @@
 import { Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { inventoryApi, StockBatch } from "@/services/inventoryService";
 import { useInventoryStore } from "@/store/useInventoryStore";
 import { useToastStore } from "@/store/useToastStore";
@@ -30,7 +29,7 @@ import {
 export default function ItemDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const colorScheme = 'light';
+  const colorScheme = "light";
   const showToast = useToastStore((state) => state.showToast);
 
   const { items, updateItem, isLoading } = useInventoryStore();

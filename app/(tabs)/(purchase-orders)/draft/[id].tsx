@@ -1,5 +1,4 @@
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { usePurchaseOrderStore } from "@/store/usePurchaseOrderStore";
 import { useSupplierStore } from "@/store/useSupplierStore";
 import { useToastStore } from "@/store/useToastStore";
@@ -23,7 +22,7 @@ import {
 export default function DraftPODetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
   const showToast = useToastStore((state) => state.showToast);
 

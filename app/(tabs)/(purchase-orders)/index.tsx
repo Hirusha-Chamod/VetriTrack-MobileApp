@@ -1,6 +1,7 @@
 import { Header } from "@/components/layout/Header";
 import { Colors, Fonts } from "@/constants/theme";
 import { useAuthStore } from "@/store/useAuthStore";
+import { safeGoBack } from "@/utils/navigation";
 import { useRouter } from "expo-router";
 import { ChevronRight, FileText, Package } from "lucide-react-native";
 import React from "react";
@@ -47,7 +48,7 @@ export default function OrdersHubScreen() {
       />
       <Header
         title="Orders"
-        onBack={() => router.back()}
+        onBack={() => safeGoBack(router, "/(tabs)/")}
         userRole={user?.role}
         onLogout={logout}
         onDashboard={() => router.push("/(tabs)/" as any)}

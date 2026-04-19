@@ -1,5 +1,4 @@
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useInventoryStore } from "@/store/useInventoryStore";
 import { usePurchaseOrderStore } from "@/store/usePurchaseOrderStore";
 import { useRouter } from "expo-router";
@@ -24,7 +23,7 @@ import {
 
 export default function ReceiveStockScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
 
   const { purchaseOrders, fetchPurchaseOrders, isLoading } =
@@ -32,7 +31,7 @@ export default function ReceiveStockScreen() {
   const { items: inventoryItems, fetchItems } = useInventoryStore();
 
   const [selectedPOId, setSelectedPOId] = useState<string>("");
-    console.log("All POs:", purchaseOrders);
+  console.log("All POs:", purchaseOrders);
   useEffect(() => {
     fetchPurchaseOrders();
     if (inventoryItems.length === 0) fetchItems();

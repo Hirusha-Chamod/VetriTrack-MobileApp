@@ -1,9 +1,9 @@
 import { Header } from "@/components/layout/Header";
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useSupplierStore } from "@/store/useSupplierStore";
 import { useToastStore } from "@/store/useToastStore";
+import { safeGoBack } from "@/utils/navigation";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import { useRouter } from "expo-router";
@@ -14,7 +14,6 @@ import {
   Clock,
   Download,
   Mail,
-  MoreVertical,
   Plus,
   Search,
   Upload,
@@ -24,7 +23,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Modal,
   RefreshControl,
   SafeAreaView,
   StatusBar,
@@ -32,13 +30,12 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   View,
 } from "react-native";
 
 export default function SuppliersScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
 
   const {
@@ -54,7 +51,6 @@ export default function SuppliersScreen() {
   const showToast = useToastStore((state) => state.showToast);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProcessingFile, setIsProcessingFile] = useState(false);
 
   useEffect(() => {
@@ -74,74 +70,69 @@ export default function SuppliersScreen() {
   }, [suppliers, searchQuery]);
 
   // ─── IMPORT LOGIC ─────────────────────────────────────────────────────────
-  const handleImport = () => {
-    setIsMenuOpen(false); // Close the menu
+  const handleImport = async () => {
+    try {
+      setIsProcessingFile(true);
+      const result = await DocumentPicker.getDocumentAsync({
+        type: [
+          "text/csv",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "application/vnd.ms-excel",
+          "text/comma-separated-values",
+        ],
+        copyToCacheDirectory: true,
+      });
 
-    // Wait 300ms for the menu to fully disappear before opening the iOS picker
-    setTimeout(async () => {
-      try {
-        const result = await DocumentPicker.getDocumentAsync({
-          type: [
-            "text/csv",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "application/vnd.ms-excel",
-          ],
-          copyToCacheDirectory: true,
-        });
-
-        if (result.canceled) return;
-
-        setIsProcessingFile(true);
-        const file = result.assets[0];
-
-        const fileToUpload = {
-          uri: file.uri,
-          name: file.name,
-          type: file.mimeType || "application/octet-stream",
-        };
-
-        await uploadSuppliers(fileToUpload);
-        showToast("Suppliers imported successfully!", "success");
-      } catch (err: any) {
-        showToast(err.message || "Failed to import suppliers", "error");
-      } finally {
-        setIsProcessingFile(false);
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return;
       }
-    }, 300);
+
+      const file = result.assets[0];
+      const fileToUpload = {
+        uri: file.uri,
+        name: file.name,
+        type: file.mimeType || "application/octet-stream",
+      };
+
+      await uploadSuppliers(fileToUpload);
+      showToast("Suppliers imported successfully!", "success");
+
+      // Refresh the supplier list after successful import
+      await fetchSuppliers();
+    } catch (error: any) {
+      showToast(error.message || "Failed to import suppliers", "error");
+    } finally {
+      setIsProcessingFile(false);
+    }
   };
 
   // ─── EXPORT LOGIC ─────────────────────────────────────────────────────────
-  const handleExport = () => {
-    setIsMenuOpen(false); // Close the menu
-
-    // Wait 300ms for export as well, since Sharing opens a system modal!
-    setTimeout(async () => {
+  const handleExport = async () => {
+    try {
       setIsProcessingFile(true);
-      try {
-        const base64Data = await exportSuppliers();
-        const filename = `VetriTrack_Suppliers_${new Date().toISOString().split("T")[0]}.xlsx`;
-        const fileUri = FileSystem.documentDirectory + filename;
+      const base64Data = await exportSuppliers();
+      const filename = `VetriTrack_Suppliers_${new Date().toISOString().split("T")[0]}.xlsx`;
+      const fileUri = FileSystem.documentDirectory + filename;
 
-        await FileSystem.writeAsStringAsync(fileUri, base64Data, {
-          encoding: FileSystem.EncodingType.Base64,
+      await FileSystem.writeAsStringAsync(fileUri, base64Data, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(fileUri, {
+          mimeType:
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          dialogTitle: "Save Suppliers Export",
         });
-
-        const canShare = await Sharing.isAvailableAsync();
-        if (canShare) {
-          await Sharing.shareAsync(fileUri, {
-            mimeType:
-              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            dialogTitle: "Save Suppliers Export",
-          });
-        } else {
-          showToast("Sharing is not available on this device", "error");
-        }
-      } catch (err: any) {
-        showToast(err.message || "Failed to export suppliers", "error");
-      } finally {
-        setIsProcessingFile(false);
+      } else {
+        showToast("Sharing is not available on this device", "error");
       }
-    }, 300);
+    } catch (error: any) {
+      showToast(error.message || "Failed to export suppliers", "error");
+    } finally {
+      setIsProcessingFile(false);
+    }
   };
 
   return (
@@ -153,7 +144,7 @@ export default function SuppliersScreen() {
       />
       <Header
         title="Suppliers"
-        onBack={() => router.back()}
+        onBack={() => safeGoBack(router, "/(tabs)/")}
         userRole={user?.role}
         onLogout={logout}
         onDashboard={() => router.push("/(tabs)/")}
@@ -186,74 +177,58 @@ export default function SuppliersScreen() {
               </View>
             </View>
 
-            <View style={styles.headerActions}>
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={() =>
-                  router.push("/(tabs)/(suppliers)/add-supplier" as any)
-                }
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={() =>
+                router.push("/(tabs)/(suppliers)/add-supplier" as any)
+              }
+            >
+              <Plus size={16} color="#0891B2" />
+              <Text
+                style={[
+                  styles.addButtonText,
+                  { fontFamily: Fonts?.bold, color: "#0891B2" },
+                ]}
               >
-                <Plus size={16} color="#0891B2" />
-                <Text
-                  style={[
-                    styles.addButtonText,
-                    { fontFamily: Fonts?.bold, color: "#0891B2" },
-                  ]}
-                >
-                  Add
-                </Text>
-              </TouchableOpacity>
-
-              {/* Three Dot Menu Button */}
-              {user?.role === "owner" && (
-                <TouchableOpacity
-                  style={styles.menuButton}
-                  onPress={() => setIsMenuOpen(true)}
-                >
-                  <MoreVertical size={20} color="white" />
-                </TouchableOpacity>
-              )}
-            </View>
+                Add
+              </Text>
+            </TouchableOpacity>
           </View>
         </SafeAreaView>
       </View>
 
-      {/* Options Dropdown Modal */}
-      <Modal visible={isMenuOpen} transparent animationType="fade">
-        <TouchableWithoutFeedback onPress={() => setIsMenuOpen(false)}>
-          <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback>
-              <View style={styles.dropdownMenu}>
-                <TouchableOpacity
-                  style={styles.menuItem}
-                  onPress={handleImport}
-                >
-                  <Upload size={18} color="#4B5563" />
-                  <Text
-                    style={[styles.menuItemText, { fontFamily: Fonts?.sans }]}
-                  >
-                    Import CSV / Excel
-                  </Text>
-                </TouchableOpacity>
-                <View style={styles.menuDivider} />
-                <TouchableOpacity
-                  style={styles.menuItem}
-                  onPress={handleExport}
-                >
-                  <Download size={18} color="#4B5563" />
-                  <Text
-                    style={[styles.menuItemText, { fontFamily: Fonts?.sans }]}
-                  >
-                    Export to Excel
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
-
       <View style={styles.contentPad}>
+        {/* Action Buttons - Only show for owner role */}
+        {user?.role === "owner" && (
+          <View style={styles.actionButtonsContainer}>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.importButton]}
+              onPress={handleImport}
+              disabled={isProcessingFile}
+            >
+              <Download size={18} color="#FFFFFF" />
+              <Text
+                style={[styles.actionButtonText, { fontFamily: Fonts?.sans }]}
+              >
+                Import
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionButton, styles.exportButton]}
+              onPress={handleExport}
+              disabled={isProcessingFile}
+            >
+              <Upload size={18} color="#FFFFFF" />
+              <Text
+                style={[styles.actionButtonText, { fontFamily: Fonts?.sans }]}
+              >
+                Export
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Search Bar */}
         <View style={styles.searchContainer}>
           <Search size={18} color="#9CA3AF" style={styles.searchIcon} />
@@ -413,7 +388,6 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.9)",
     marginTop: 2,
   },
-  headerActions: { flexDirection: "row", alignItems: "center", gap: 12 },
   addButton: {
     backgroundColor: "white",
     flexDirection: "row",
@@ -423,41 +397,31 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   addButtonText: { fontSize: 14, marginLeft: 4 },
-  menuButton: {
-    padding: 4,
-  },
 
-  // Modal / Dropdown Styles
-  modalOverlay: {
+  actionButtonsContainer: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 16,
+  },
+  actionButton: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.1)",
-  },
-  dropdownMenu: {
-    position: "absolute",
-    top: 110, // Adjust based on your header height
-    right: 20,
-    backgroundColor: "white",
-    borderRadius: 8,
-    padding: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
-    minWidth: 180,
-  },
-  menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    gap: 12,
+    justifyContent: "center",
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 8,
   },
-  menuItemText: { fontSize: 15, color: "#374151" },
-  menuDivider: {
-    height: 1,
-    backgroundColor: "#F3F4F6",
-    marginVertical: 4,
+  importButton: {
+    backgroundColor: "#0891B2",
+  },
+  exportButton: {
+    backgroundColor: "#059669",
+  },
+  actionButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
 
   processingOverlay: {
@@ -466,7 +430,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(255,255,255,0.8)",
+    backgroundColor: "rgba(255,255,255,0.9)",
     justifyContent: "center",
     alignItems: "center",
     zIndex: 999,

@@ -1,33 +1,33 @@
 import { Header } from "@/components/layout/Header";
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useSupplierStore } from "@/store/useSupplierStore";
 import { useToastStore } from "@/store/useToastStore";
+import { safeGoBack } from "@/utils/navigation";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    Building2,
-    ChevronLeft,
-    Clock,
-    Edit,
-    Info,
-    Mail,
-    Save,
-    X,
+  Building2,
+  ChevronLeft,
+  Clock,
+  Edit,
+  Info,
+  Mail,
+  Save,
+  X,
 } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    KeyboardAvoidingView,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function SupplierDetailScreen() {
@@ -35,7 +35,7 @@ export default function SupplierDetailScreen() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
 
   const { suppliers, updateSupplier, isLoading } = useSupplierStore();
@@ -151,7 +151,7 @@ export default function SupplierDetailScreen() {
       <StatusBar barStyle="light-content" backgroundColor="#0891B2" />
       <Header
         title="Supplier Details"
-        onBack={() => router.back()}
+        onBack={() => safeGoBack(router, "/(tabs)/(suppliers)")}
         userRole={user?.role}
         onLogout={logout}
         onDashboard={() => router.push("/(tabs)/" as any)}

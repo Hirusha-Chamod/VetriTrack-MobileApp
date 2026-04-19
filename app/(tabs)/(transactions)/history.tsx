@@ -1,30 +1,29 @@
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useTransactionStore } from "@/store/useTransactionStore";
 import { useRouter } from "expo-router";
 import {
-  ArrowDownRight,
-  ArrowUpRight,
-  ChevronLeft,
-  Edit3,
-  History,
+    ArrowDownRight,
+    ArrowUpRight,
+    ChevronLeft,
+    Edit3,
+    History,
 } from "lucide-react-native";
 import React, { useEffect } from "react";
 import {
-  ActivityIndicator,
-  FlatList,
-  RefreshControl,
-  SafeAreaView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    FlatList,
+    RefreshControl,
+    SafeAreaView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 export default function TransactionHistoryScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
 
   const { transactions, fetchTransactions, isLoading } = useTransactionStore();

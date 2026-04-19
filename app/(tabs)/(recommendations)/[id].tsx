@@ -1,5 +1,4 @@
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { approvalApi } from "@/services/approvalService";
 import { purchaseOrderApi } from "@/services/purchaseOrderService";
 import { Supplier, supplierApi } from "@/services/supplierService";
@@ -10,14 +9,13 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ArrowLeft,
   Check,
-  ChevronLeft,
   Minus,
   MoreVertical,
   Package,
   Plus,
   Send,
   ShoppingCart,
-  TrendingUp,
+  TrendingUp
 } from "lucide-react-native";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -473,7 +471,8 @@ export default function RecommendationDetailScreen() {
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Current Stock</Text>
               <Text style={[styles.infoValue, { fontFamily: Fonts?.bold }]}>
-                {recommendation.totalCurrentStock} {recommendation.unitOfMeasure}
+                {recommendation.totalCurrentStock}{" "}
+                {recommendation.unitOfMeasure}
               </Text>
             </View>
             <View style={styles.infoRow}>

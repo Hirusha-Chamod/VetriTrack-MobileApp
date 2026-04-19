@@ -1,5 +1,5 @@
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { authApi, UserProfile } from "@/services/authService";
 import { inventoryApi } from "@/services/inventoryService";
 import { useApprovalStore } from "@/store/useApprovalStore";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -24,6 +24,7 @@ import {
 } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
+  Image, // 👇 Make sure Image is imported
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -35,12 +36,13 @@ import {
 
 export default function OwnerDashboard({ username }: { username: string }) {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
 
   const { tasks, fetchTasks } = useTaskStore();
   const { pendingRequests, fetchPendingRequests } = useApprovalStore();
   const [expiringSoonCount, setExpiringSoonCount] = useState(0);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const {
     items: inventoryItems,
     fetchItems: fetchInventory,
@@ -48,25 +50,26 @@ export default function OwnerDashboard({ username }: { username: string }) {
     fetchRecommendations,
   } = useInventoryStore();
 
- const { user } = useAuthStore();
+  const { user } = useAuthStore();
 
   useEffect(() => {
-
     if (!user?.token) {
-      return; 
+      return;
     }
+    authApi.getUserById(user.id).then(setProfile).catch(console.error);
     fetchTasks();
     fetchPendingRequests();
     fetchInventory();
     fetchRecommendations();
-    
+
     inventoryApi
       .getExpiryReport()
       .then((data) => {
         setExpiringSoonCount(data.expiringSoon.length);
       })
-      .catch((err) => console.log("Failed to fetch expiry count:", err.message));
-      
+      .catch((err) =>
+        console.log("Failed to fetch expiry count:", err.message),
+      );
   }, [user?.token]);
 
   const pendingRequestsCount = pendingRequests.length;
@@ -75,6 +78,8 @@ export default function OwnerDashboard({ username }: { username: string }) {
     (t) => t.status !== "completed" && t.status !== "cancelled",
   );
   const tasksCount = activeTasks.length;
+  const firstName =
+    profile?.fullName?.split(" ")[0] || user?.username || "Manager";
 
   const overdueTasksCount = activeTasks.filter((t) => {
     const due = new Date(t.dueDate);
@@ -164,7 +169,7 @@ export default function OwnerDashboard({ username }: { username: string }) {
       icon: ClipboardList,
       bg: theme.blue50,
       iconColor: theme.blue600,
-      destination: "tasks", // 👇 Updated destination string
+      destination: "tasks",
       badge:
         overdueTasksCount > 0
           ? overdueTasksCount
@@ -187,7 +192,7 @@ export default function OwnerDashboard({ username }: { username: string }) {
       bg: "#FEFCE8",
       iconColor: "#CA8A04",
       destination: "recommendations",
-      badge: recommendationsCount > 0 ? recommendationsCount : undefined, // 👇 Added badge here too!
+      badge: recommendationsCount > 0 ? recommendationsCount : undefined,
     },
     {
       title: "Expiry Management",
@@ -271,20 +276,30 @@ export default function OwnerDashboard({ username }: { username: string }) {
                 Welcome back,
               </Text>
               <Text style={[styles.userNameText, { fontFamily: Fonts?.bold }]}>
-                {username}
+                {firstName}
               </Text>
               <Text style={[styles.roleSubText, { fontFamily: Fonts?.sans }]}>
-                Owner
+                Manager
               </Text>
             </View>
+
             <TouchableOpacity
               style={[
                 styles.profileBtn,
-                { backgroundColor: "rgba(255, 255, 255, 0.1)" },
+                !user?.avatarUrl && {
+                  backgroundColor: "rgba(255, 255, 255, 0.1)",
+                },
               ]}
               onPress={() => router.push("/profile" as any)}
             >
-              <UserCircle2 size={28} color="white" />
+              {user?.avatarUrl ? (
+                <Image
+                  source={{ uri: user.avatarUrl }}
+                  style={styles.headerAvatarImage}
+                />
+              ) : (
+                <UserCircle2 size={28} color="white" />
+              )}
             </TouchableOpacity>
           </View>
         </SafeAreaView>
@@ -402,6 +417,12 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
+    overflow: "hidden", // 👇 Added to ensure image clips to circle
+  },
+  // 👇 Added image style for the avatar
+  headerAvatarImage: {
+    width: "100%",
+    height: "100%",
   },
 
   scrollContainer: { padding: 16, paddingBottom: 80 },

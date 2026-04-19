@@ -1,31 +1,31 @@
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useInventoryStore } from "@/store/useInventoryStore";
 import { useToastStore } from "@/store/useToastStore";
 import { useTransactionStore } from "@/store/useTransactionStore";
+import { safeGoBack } from "@/utils/navigation";
 import { useRouter } from "expo-router";
 import {
-  ChevronLeft,
-  ChevronRight,
-  Info,
-  Package,
-  Search,
-  Upload,
+    ChevronLeft,
+    ChevronRight,
+    Info,
+    Package,
+    Search,
+    Upload,
 } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    FlatList,
+    KeyboardAvoidingView,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 const ISSUE_REASONS = [
@@ -37,7 +37,7 @@ const ISSUE_REASONS = [
 
 export default function IssueStockScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
   const showToast = useToastStore((state) => state.showToast);
 
@@ -82,7 +82,7 @@ export default function IssueStockScreen() {
       });
 
       showToast("Stock issued successfully via FEFO!", "success");
-      router.back();
+      safeGoBack(router, "/(tabs)/(transactions)");
     } catch (error: any) {
       // Safely extract the error message from Axios/NestJS
       const errorMessage =
@@ -115,7 +115,7 @@ export default function IssueStockScreen() {
         <SafeAreaView>
           <View style={styles.headerContent}>
             <TouchableOpacity
-              onPress={() => router.back()}
+              onPress={() => safeGoBack(router, "/(tabs)/(transactions)")}
               style={styles.backBtn}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >

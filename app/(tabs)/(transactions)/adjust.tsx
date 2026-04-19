@@ -1,34 +1,34 @@
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useInventoryStore } from "@/store/useInventoryStore";
 import { useToastStore } from "@/store/useToastStore";
 import { useTransactionStore } from "@/store/useTransactionStore";
+import { safeGoBack } from "@/utils/navigation";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-  CheckCircle,
-  ChevronLeft,
-  ChevronRight,
-  Edit3,
-  FileText,
-  Minus,
-  Package,
-  Plus,
-  Search,
+    CheckCircle,
+    ChevronLeft,
+    ChevronRight,
+    Edit3,
+    FileText,
+    Minus,
+    Package,
+    Plus,
+    Search,
 } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    FlatList,
+    KeyboardAvoidingView,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 const ADJUSTMENT_REASONS = [
@@ -42,7 +42,7 @@ const ADJUSTMENT_REASONS = [
 
 export default function StockAdjustmentScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
   const showToast = useToastStore((state) => state.showToast);
 
@@ -130,7 +130,7 @@ export default function StockAdjustmentScreen() {
       setNotes("");
 
       // Go back to the hub
-      router.back();
+      safeGoBack(router, "/(tabs)/(transactions)");
     } catch (error: any) {
       const errorMessage =
         error?.response?.data?.message ||
@@ -159,7 +159,7 @@ export default function StockAdjustmentScreen() {
         <SafeAreaView>
           <View style={styles.headerContent}>
             <TouchableOpacity
-              onPress={() => router.back()}
+              onPress={() => safeGoBack(router, "/(tabs)/(transactions)")}
               style={styles.backBtn}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >

@@ -1,27 +1,22 @@
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useInventoryStore } from "@/store/useInventoryStore";
 import { useRouter } from "expo-router";
-import {
-    ArrowLeft,
-    ChevronRight,
-    Lightbulb
-} from "lucide-react-native";
+import { ArrowLeft, ChevronRight, Lightbulb } from "lucide-react-native";
 import React, { useEffect } from "react";
 import {
-    ActivityIndicator,
-    RefreshControl,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function SmartRecommendationsScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
 
   const { recommendations, isLoading, fetchRecommendations } =
@@ -43,7 +38,7 @@ export default function SmartRecommendationsScreen() {
         return { bg: "#F3F4F6", text: "#374151", label: urgency };
     }
   };
-  
+
   // Helper to generate the descriptive subtitle based on AI data
   const getRecommendationMessage = (item: any) => {
     let msg = "";
@@ -135,7 +130,11 @@ export default function SmartRecommendationsScreen() {
                 key={item.itemCode || index}
                 style={styles.card}
                 activeOpacity={0.7}
-                onPress={() => router.push(`/(tabs)/(recommendations)/${item.itemCode}` as any)}
+                onPress={() =>
+                  router.push(
+                    `/(tabs)/(recommendations)/${item.itemCode}` as any,
+                  )
+                }
               >
                 <View style={styles.cardTop}>
                   <Text style={[styles.itemName, { fontFamily: Fonts?.bold }]}>

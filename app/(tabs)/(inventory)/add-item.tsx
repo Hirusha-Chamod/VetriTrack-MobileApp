@@ -1,33 +1,33 @@
 import { Header } from "@/components/layout/Header";
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useInventoryStore } from "@/store/useInventoryStore";
 import { useToastStore } from "@/store/useToastStore";
+import { safeGoBack } from "@/utils/navigation";
 import { useRouter } from "expo-router";
 import { ChevronDown, Package, Save, X } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-    ActivityIndicator,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 
 export default function AddInventoryItemScreen() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
-  const colorScheme = 'light';
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
   const { createItem, isLoading } = useInventoryStore();
   const showToast = useToastStore((state) => state.showToast);
@@ -92,7 +92,7 @@ export default function AddInventoryItemScreen() {
       });
       setErrors({});
 
-      router.back();
+      safeGoBack(router, "/(tabs)/(inventory)");
     } catch (error: any) {
       showToast(error.message || "Failed to create item", "error");
     }
@@ -141,7 +141,7 @@ export default function AddInventoryItemScreen() {
       <StatusBar barStyle="light-content" backgroundColor="#0891B2" />
       <Header
         title="Add Item"
-        onBack={() => router.back()}
+        onBack={() => safeGoBack(router, "/(tabs)/(inventory)")}
         userRole={user?.role}
         onLogout={logout}
         onDashboard={() => router.push("/(tabs)/" as any)}
@@ -397,7 +397,7 @@ export default function AddInventoryItemScreen() {
 
           <TouchableOpacity
             style={[styles.btn, styles.btnCancel]}
-            onPress={() => router.back()}
+            onPress={() => safeGoBack(router, "/(tabs)/(inventory)")}
           >
             <X size={20} color={theme.textPrimary} />
             <Text style={[styles.btnText, { color: theme.textPrimary }]}>

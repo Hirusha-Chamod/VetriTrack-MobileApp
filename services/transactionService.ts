@@ -2,8 +2,8 @@ import api from "./api";
 
 export interface Transaction {
   _id: string;
-  itemId: any; // Populated InventoryItem object when fetched
-  batchId?: string; // Optional depending on the transaction type
+  itemId: any;
+  batchId?: string;
   type: "RECEIVE" | "ISSUE" | "ADJUSTMENT";
   quantity: number;
   reason: string;
@@ -17,21 +17,35 @@ export interface CreateTransactionPayload {
   batchId?: string;
   batchLotNumber?: string;
   expiryDate?: string;
-  supplierId?: string; 
-  type: 'RECEIVE' | 'ISSUE' | 'ADJUSTMENT';
+  supplierId?: string;
+  type: "RECEIVE" | "ISSUE" | "ADJUSTMENT";
   quantity: number;
   reason: string;
 }
+
 export const transactionApi = {
-  // Fetch transaction history (useful for an audit log screen later)
   getAll: async (): Promise<Transaction[]> => {
     const response = await api.get<Transaction[]>("/transactions");
     return response.data;
   },
 
-  // The main engine: Creates a transaction and updates stock levels in the backend
   create: async (data: CreateTransactionPayload): Promise<Transaction> => {
     const response = await api.post<Transaction>("/transactions", data);
+    return response.data;
+  },
+
+  importTransactions: async (
+    formData: FormData,
+  ): Promise<{ success: boolean; message: string }> => {
+    const response = await api.post<{ success: boolean; message: string }>(
+      "/transactions/import",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    );
     return response.data;
   },
 };

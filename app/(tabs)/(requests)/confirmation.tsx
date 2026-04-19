@@ -1,20 +1,19 @@
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { CheckCircle, FileText, Package } from "lucide-react-native";
 import React from "react";
 import {
-    SafeAreaView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function RequestSubmissionConfirmationScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = "light";
   const theme = Colors[colorScheme];
 
   // We pass these params from the create screen when navigating here!
@@ -30,8 +29,8 @@ export default function RequestSubmissionConfirmationScreen() {
   };
 
   const handleBackToDashboard = () => {
-    // Replace so they go straight to the root dashboard
-    router.replace("/(tabs)/" as any);
+    // Navigate back to requests list
+    router.replace("/(tabs)/(requests)/" as any);
   };
 
   return (
